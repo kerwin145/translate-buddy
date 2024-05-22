@@ -9,7 +9,9 @@ chrome.runtime.onInstalled.addListener(() => {
 chrome.contextMenus.onClicked.addListener((info, tab) => {
   if (info.menuItemId === "translate" && info.selectionText) {
     chrome.storage.local.set({ selectedText: info.selectionText }, () => {
-      chrome.tabs.sendMessage(tab.id, { action: "showTranslationPanel" });
+      chrome.tabs.sendMessage(tab.id, 
+        { action: "showTranslationPanel", selectedText: info.selectionText}
+      );
     });
   }
 });

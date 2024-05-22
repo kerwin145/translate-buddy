@@ -1,42 +1,48 @@
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.action === "showTranslationPanel") {
-      showTranslationPanel();
+      showTranslationPanel(message.selectedText);
     } 
   });
   
   let translationPanel = null;
   
-  function showTranslationPanel() {
+  async function showTranslationPanel(selectedText) {
     if (translationPanel) return;
   
-    translationPanel = document.createElement("div");
-    translationPanel.id = "translation-panel";
-    translationPanel.innerHTML = `
-      <div id="panel-content">
-        <span id="close-btn">&times;</span>
-        <p>Translation Panel</p>
-      </div>
-    `;
-  
-    translationPanel.style.position = "fixed";
-    translationPanel.style.top = "20px";
-    translationPanel.style.right = "20px";
-    translationPanel.style.zIndex = "9999";
-    translationPanel.style.background = "white";
-    translationPanel.style.padding = "10px";
-    translationPanel.style.border = "1px solid #ccc";
-    translationPanel.style.borderRadius = "5px";
-  
-    document.body.appendChild(translationPanel);
-    document.addEventListener("click", handleOutsideClick);
-    translationPanel.querySelector("#close-btn").addEventListener("click", hideTranslationPanel);
+    // Load the HTML content
+    const container = document.createElement('div')
+    container.id = "translation-panel"
+    document.body.appendChild(container)
+
+    try {
+      const html = 
+      `
+        <h2 class = "translate-selectedText">${selectedText}</h2>
+        <div class="close-btn">&times;</div>
+        <p id="translation-text">Content here</p>
+      `
+
+      container.innerHTML = html
+
+      const responseCSS = await fetch(chrome.runtime.getURL('styles.css'));
+      const css = await responseCSS.text();
+      const styleElement = document.createElement('style');
+      styleElement.innerHTML = css;
+      document.querySelector('head').appendChild(styleElement);
+
+      document.addEventListener("click", handleOutsideClick);
+      container.querySelector(".close-btn").addEventListener("click", hideTranslationPanel);
+    
+      translationPanel = container
+
+    }catch(err){console.log(err)}
   }
   
   function hideTranslationPanel() {
     if (!translationPanel) return;
     
     document.removeEventListener("click", handleOutsideClick);
-    translationPanel.querySelector("#close-btn").removeEventListener("click", hideTranslationPanel);
+    translationPanel.querySelector(".close-btn").removeEventListener("click", hideTranslationPanel);
   
     translationPanel.remove();
     translationPanel = null;
