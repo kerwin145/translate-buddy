@@ -12,6 +12,7 @@
 
 .translate-selectedText{
   margin: 0 auto;
+  margin-bottom: 0.5rem;
   padding: 4px 1rem;
   width: fit-content;
   max-width: 400px;
@@ -29,4 +30,8 @@
   position: absolute;
   top: 20px;
   right: 20px
+}
+
+.translate-results{
+  margin: auto;
 }

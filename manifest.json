@@ -28,7 +28,7 @@
     ],
     "web_accessible_resources": [
       {
-        "resources": ["styles.css"],
+        "resources": ["styles.css, cedict.json"],
         "matches": ["<all_urls>"]
       }
     ]
