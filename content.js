@@ -1,10 +1,3 @@
-
-const responseCSS = await fetch(chrome.runtime.getURL('styles.css'));
-const css = await responseCSS.text();
-const styleElement = document.createElement('style');
-styleElement.innerHTML = css;
-document.querySelector('head').appendChild(styleElement);
-
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.action === "showTranslationPanel") {
       showTranslationPanel(message.selectedText);
@@ -35,9 +28,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       translationPanel = container
 
       DOMresults = document.querySelector(".translate-results")
+      DOMheader = document.querySelector(".translate-selectedText")
 
       //Search db
-      let info = searchDict(text)
+      let info = searchDict(selectedText)
+      console.log(info)
       if (!info){
         DOMresults.innerHTML = "Not in my dictionary, sorry! :("
         return
@@ -45,7 +40,20 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
       let {simplified, traditional, pinyin, definitions} = info
       pinyin = parsePinyin(pinyin)
-        
+
+      DOMheader.innerHTML = `
+        <small>Traditional</small>
+        <small>Simplified</small>
+        <div>${traditional}</div>
+        <div>${simplified}</div>
+      `
+      DOMheader.classList.add('translate-header')
+
+      const DOMdefinitions = document.createElement('ol')
+      for(const d of definitions) DOMdefinitions.innerHTML += `<li>${d}</li>`
+      
+      DOMresults.innerHTML = `<h3>Definitions</h3>`
+      DOMresults.appendChild(DOMdefinitions)
 
     }catch(err){console.log(err)}
   }

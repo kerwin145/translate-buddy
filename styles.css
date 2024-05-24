@@ -35,3 +35,42 @@
 .translate-results{
   margin: auto;
 }
+
+.translate-header{
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  background-color: transparent;
+  border: none;
+  gap: 8px;
+}
+
+.translate-header > *{
+  text-align: center;
+}
+
+/* Styling for the first row */
+.translate-header > small {
+  font-size: x-small;
+  color: gray;
+}
+
+
+/* Styling for the second row */
+.translate-header > div:nth-child(3), .translate-header > div:nth-child(4) {
+  background-color: ghostwhite;
+  margin: 0 -8px;
+  padding: 4px 16px;
+  border-radius: 8px;
+}
+
+.translate-header > div:nth-child(3){
+  border-right: none;
+}
+
+.translate-header > div:nth-child(4){
+  border-left: none;
+}
+
+.translate-results li{
+  list-style: decimal;
+}

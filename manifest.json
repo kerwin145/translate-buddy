@@ -1,36 +1,36 @@
 {
-    "manifest_version": 3,
-    "name": "Translate Buddy",
-    "version": "1.0",
-    "description": "Translate with context.",
-    "permissions": ["storage", "contextMenus", "activeTab"],
-    "background": {
-      "service_worker": "background.js"
-    },
-    "action": {
-      "default_popup": "popup.html",
-      "default_icon": {
-        "16": "images/16x16.png",
-        "48": "images/48x48.png",
-        "128": "images/128x128.png"
-      }
-    },
-    "icons": {
+  "manifest_version": 3,
+  "name": "Translate Buddy",
+  "version": "1.0",
+  "description": "Translate with context.",
+  "permissions": ["storage", "contextMenus", "activeTab"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
       "16": "images/16x16.png",
       "48": "images/48x48.png",
       "128": "images/128x128.png"
-    },
-    "content_scripts": [
-      {
-        "matches": ["<all_urls>"],
-        "js": ["content.js"]
-      }
-    ],
-    "web_accessible_resources": [
-      {
-        "resources": ["styles.css, cedict.json"],
-        "matches": ["<all_urls>"]
-      }
-    ]
-  }
-  
+    }
+  },
+  "icons": {
+    "16": "images/16x16.png",
+    "48": "images/48x48.png",
+    "128": "images/128x128.png"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "css": ["styles.css"]
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["styles.css", "cedict.json"],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}
