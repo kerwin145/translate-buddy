@@ -30,4 +30,4 @@ def convert_cedict_to_json(input_file, output_file):
         json.dump(entries, f, ensure_ascii=False, indent=2)
 
 # Convert CC-CEDICT to JSON
-convert_cedict_to_json('cedict_ts.u8', 'cedict.json')
+convert_cedict_to_json('resources/cedict_ts.u8', 'cedict.json')
