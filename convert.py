@@ -1,5 +1,6 @@
 import os
 import json
+import re
 
 file_suffixes = ["lvl1.txt", "lvl2.txt", "lvl3.txt", "lvl4.txt", "lvl5.txt", "lvl6.txt", "lvl7-9.txt"]
 char_lvls = [set() for _ in range(7)]
@@ -19,6 +20,44 @@ for idx, fname in enumerate(file_suffixes):
         word_data = {line.strip().split(None, 1)[1] for line in file}
         word_lvls[idx].update(word_data)
 
+pinyin_map = {
+    'a': 'āáǎà',
+    'e': 'ēéěè',
+    'i': 'īíǐì',
+    'o': 'ōóǒò',
+    'u': 'ūúǔù',
+    'ü': 'ǖǘǚǜ'
+}
+
+def parse_pinyin(pinyin):
+    words = pinyin.split()
+    import re
+
+    out = []
+    for w in words:
+        w = re.sub(r'u:', "ü", w)
+        
+        if not w[-1].isdigit():
+            out.append(w)
+            continue
+        tone = int(w[-1])
+        w = w[:-1]
+        if tone == 5:
+            out.append(w)
+            continue
+        
+        cur = ""
+        vowelFound = False
+        for c in w:
+            if vowelFound or not c in pinyin_map:
+                cur += c
+                continue
+            vowelFound = True
+            cur += pinyin_map[c][tone-1]
+        out.append(cur)
+    
+    return " ".join(out)
+
 def parse_cedict_line(line):
     parts = line.split(' ')
     traditional = parts[0]
@@ -30,7 +69,7 @@ def parse_cedict_line(line):
     return {
         'traditional': traditional,
         'simplified': simplified,
-        'pinyin': pinyin,
+        'pinyin': parse_pinyin(pinyin),
         'definitions': [d for d in definitions if d],
         'char_HSK_level': [],
         'word_HSK_level': []
