@@ -1,23 +1,28 @@
 //store state for translation results
-let translations = {text: "", page: null, definitions: []}
+let tr_data = {text: "", page: null, definitions: []}
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === "showTranslationPanel") {
-    translations = {text: selectedText, page: null, definitions: []}
+    let text = message.selectedText
+    tr_data = {text, page: null, definitions: []}
 
-    let info = searchDict(selectedText)
+    let info = searchDict(text)
     if (info){
-      translations.definitions = info
-      translations.page = 0
+      tr_data.definitions = info
+      tr_data.page = 0
     }
 
-    showTranslationPanel(message.selectedText);
+    tr_data.definitions.sort((a, b) => {
+      Math.min(a.char_HSK_level, a.word_HSK_level) - Math.min(b.char_HSK_level, b.word_HSK_level)
+    })
+
+    showTranslationPanel();
   } else if (message.action === "noMessage"){
     alert("No highlighted text detected.")
   }
 });
 
-async function showTranslationPanel(selectedText) {
+async function showTranslationPanel() {
   if (translationPanel) 
     closeTranslationPanel();
 
@@ -29,66 +34,63 @@ async function showTranslationPanel(selectedText) {
   try {
     let html = 
     `
-      <h2 class = "translate-selectedText">${selectedText}</h2>
+      <h2 class = "translate-selectedText">${tr_data.text}</h2>
       <div class="close-btn">&times;</div>
       <div class="translate-results">
         Loading...
       </div>
     `
     container.innerHTML = html
-    document.addEventListener("click", handleOutsideClick);
+    document.addEventListener("mousedown", handleOutsideClick)
     container.querySelector(".close-btn").addEventListener("click", closeTranslationPanel);
     translationPanel = container
 
-    DOMresults = document.querySelector(".translate-results")
-    DOMheader = document.querySelector(".translate-selectedText")
+    let DOMresults = document.querySelector(".translate-results")
+    let DOMheader = document.querySelector(".translate-selectedText")
 
-    if (translations.definitions.length == 0){
+    if (tr_data.definitions.length == 0){
       DOMresults.innerHTML = "Not in my dictionary, sorry! :("
       return
     }
 
-    DOMresults.info = ""
+    DOMresults.innerHTML = ""
 
-    let {simplified, traditional, pinyin, definitions} = translations.definitions[translations.page]
+    let {simplified, traditional, pinyin, definitions} = tr_data.definitions[tr_data.page]
 
     DOMheader.innerHTML = `
-      <small>Traditional</small>
+      <span>${pinyin}</span>
+      <div id = "trans-trad-char">${traditional}</div>
+      <div id = "trans-simp-char">${simplified}</div>
+      <small id = "">Traditional</small>
       <small>Simplified</small>
-      <div>${traditional}</div>
-      <div>${simplified}</div>
     `
     DOMheader.classList.add('translate-header')
-
-    const DOMpinyin = document.createElement('small')
-    DOMpinyin.innerHTML = pinyin
-    DOMpinyin.classList.add("translate-pinyin")
 
     const DOMdefinitions = document.createElement('ol')
     for(const d of definitions) DOMdefinitions.innerHTML += `<li>${d}</li>`
 
-    DOMresults.appendChild(DOMpinyin)
     DOMresults.insertAdjacentHTML("beforeend", `<h3>Definitions</h3>`)
     DOMresults.appendChild(DOMdefinitions)
 
-    if(translations.definitions.length > 1){
+    if(tr_data.definitions.length > 1){
       const DOMcontrol = document.createElement('div')
+      DOMcontrol.classList.add("trans-control")
 
       const rightArrow = document.createElement('span')
       const counter = document.createElement('span')
       const leftArrow = document.createElement('span')
       rightArrow.innerHTML = ">"
-      counter.innerHTML = `${translations.page + 1} / ${translations.definitions.length}`
+      counter.innerHTML = `${tr_data.page + 1} / ${tr_data.definitions.length}`
       leftArrow.innerHTML = "<"
       
-      if(translations.page == 0){
+      if(tr_data.page == 0)
         leftArrow.classList.add('tr-nav-disabled')
-      if(translations.page < translations.definitions.length - 1)
-        rightArrow.addEventListener('click', () => {translations.page++; showTranslationPanel()})
-      if(translations.page == translations.definitions.length - 1)
+      if(tr_data.page < tr_data.definitions.length - 1)
+        rightArrow.addEventListener('click', () => {tr_data.page++; closeTranslationPanel(); showTranslationPanel()})
+      if(tr_data.page == tr_data.definitions.length - 1)
         rightArrow.classList.add('tr-nav-disabled')
-      if(translations.page > 0)
-        leftArrow.addEventListener('click', () => {translations.page--; showTranslationPanel()})
+      if(tr_data.page > 0)
+        leftArrow.addEventListener('click', () => {tr_data.page--; closeTranslationPanel(); showTranslationPanel()})
 
       DOMcontrol.appendChild(leftArrow)
       DOMcontrol.appendChild(counter)
@@ -111,6 +113,7 @@ function closeTranslationPanel() {
 
 function handleOutsideClick(event) {
   if (translationPanel && !translationPanel.contains(event.target)) {
+
     closeTranslationPanel();
   }
 }
@@ -127,5 +130,5 @@ fetch(chrome.runtime.getURL('cedict.json'))
 function searchDict(word){
   if(!dictionaryData) return null
 
-  return dictionaryData.findAll(x => x.simplified === word || x.traditional === word);
+  return dictionaryData.filter(x => x.simplified === word || x.traditional === word);
 }

@@ -2,4 +2,4 @@ To set up, you will have to download the chinese english dictionary from https:/
 
 Unzip, and run convert.py
 
-Big thanks to https://github.com/elkmovie/hsk30 for the HSK word list data, allowing translation entries to be assigned with their HSK levels
+Big thanks to https://github.com/elkmovie/hsk30 and https://mandarinbean.com/new-hsk-vocabulary/ for the HSK word list data, allowing translation entries to be assigned with their HSK levels
