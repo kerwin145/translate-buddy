@@ -1,26 +1,60 @@
 //store state for translation results
-let tr_data = {text: "", page: null, definitions: []}
+let tr_data = {text: "", page: null, entries: []}
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === "showTranslationPanel") {
     let text = message.selectedText
-    tr_data = {text, page: null, definitions: []}
+    tr_data = {text, page: null, entries: []}
 
     let info = searchDict(text)
     if (info){
-      tr_data.definitions = info
+      tr_data.entries = info
       tr_data.page = 0
     }
 
-    tr_data.definitions.sort((a, b) => {
-      Math.min(a.char_HSK_level, a.word_HSK_level) - Math.min(b.char_HSK_level, b.word_HSK_level)
-    })
+    sortEntries()
 
     showTranslationPanel();
   } else if (message.action === "noMessage"){
     alert("No highlighted text detected.")
   }
 });
+
+function sortEntries(){
+  if (tr_data.text == "" || tr_data.entries.length <= 1)
+      return
+  let entries = tr_data.entries
+  //Remove translations with "surname" and "variant of", as they are least useful
+  let { lowPriority, highPriority } = entries.reduce((acc, x) => {
+    if (x.definitions.some(D => {
+        let d = D.toLowerCase()
+        return d.includes("surname") || d.includes("variant of") || d.includes("used in ")
+    })) 
+        acc.lowPriority.push(x);
+     else 
+        acc.highPriority.push(x);
+    return acc;
+  }, { lowPriority: [], highPriority: [] });
+
+  lowPriority = lowPriority.map( x => {
+    if (x.definitions.some(d => d.toLowerCase().includes("used in")))
+      return {defs: x, val: 1}
+    if (x.definitions.some(d => d.toLowerCase().includes("surname")))
+      return {defs: x, val: 2}
+    if (x.definitions.some(d => d.toLowerCase().includes("variant of")))
+      return {defs: x, val: 3}
+    else return {defs: x,  val: 99}
+  }).sort((a,b) => a.val - b.val).map(x => x.defs)
+
+  highPriority = highPriority.sort((a, b) => {
+    const dif = a.HSK_level - b.HSK_level
+    if (dif !== 0) return dif;
+    return b.definitions.length - a.definitions.length; // Longer list of definitions goes first 
+  });
+
+  
+  tr_data.entries = highPriority.concat(lowPriority);
+}
 
 async function showTranslationPanel() {
   if (translationPanel) 
@@ -48,20 +82,20 @@ async function showTranslationPanel() {
     let DOMresults = document.querySelector(".translate-results")
     let DOMheader = document.querySelector(".translate-selectedText")
 
-    if (tr_data.definitions.length == 0){
+    if (tr_data.entries.length == 0){
       DOMresults.innerHTML = "Not in my dictionary, sorry! :("
       return
     }
 
     DOMresults.innerHTML = ""
 
-    let {simplified, traditional, pinyin, definitions} = tr_data.definitions[tr_data.page]
+    let {simplified, traditional, pinyin, definitions} = tr_data.entries[tr_data.page]
 
     DOMheader.innerHTML = `
       <span>${pinyin}</span>
       <div id = "trans-trad-char">${traditional}</div>
       <div id = "trans-simp-char">${simplified}</div>
-      <small id = "">Traditional</small>
+      <small>Traditional</small>
       <small>Simplified</small>
     `
     DOMheader.classList.add('translate-header')
@@ -72,7 +106,7 @@ async function showTranslationPanel() {
     DOMresults.insertAdjacentHTML("beforeend", `<h3>Definitions</h3>`)
     DOMresults.appendChild(DOMdefinitions)
 
-    if(tr_data.definitions.length > 1){
+    if(tr_data.entries.length > 1){
       const DOMcontrol = document.createElement('div')
       DOMcontrol.classList.add("trans-control")
 
@@ -80,14 +114,14 @@ async function showTranslationPanel() {
       const counter = document.createElement('span')
       const leftArrow = document.createElement('span')
       rightArrow.innerHTML = ">"
-      counter.innerHTML = `${tr_data.page + 1} / ${tr_data.definitions.length}`
+      counter.innerHTML = `${tr_data.page + 1} / ${tr_data.entries.length}`
       leftArrow.innerHTML = "<"
       
       if(tr_data.page == 0)
         leftArrow.classList.add('tr-nav-disabled')
-      if(tr_data.page < tr_data.definitions.length - 1)
+      if(tr_data.page < tr_data.entries.length - 1)
         rightArrow.addEventListener('click', () => {tr_data.page++; closeTranslationPanel(); showTranslationPanel()})
-      if(tr_data.page == tr_data.definitions.length - 1)
+      if(tr_data.page == tr_data.entries.length - 1)
         rightArrow.classList.add('tr-nav-disabled')
       if(tr_data.page > 0)
         leftArrow.addEventListener('click', () => {tr_data.page--; closeTranslationPanel(); showTranslationPanel()})
