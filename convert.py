@@ -74,14 +74,18 @@ def parse_cedict_line(line):
 HSK_LEVELS = 6
 words_levels = [set() for _ in range(HSK_LEVELS)]
 
+print_max = 20
+print_ct = 0
+
 # Populate HSK level data for words, where you have word and pinyin combo
 for idx in range(HSK_LEVELS):
     with open(f"resources/{idx+1}", 'r', encoding='utf-8') as file:
         for line in file:
-            # print(line.strip().split(None, 3))
             word, pinyin = line.strip().split(None, 3)[1:3]
-            print((word, pinyin))
             words_levels[idx].add((word, pinyin))
+            if print_ct < print_max:
+                print(word, pinyin)
+                print_ct += 1
 
 entries = []
 
@@ -94,9 +98,13 @@ with open('resources/cedict_ts.u8', 'r', encoding='utf-8') as f:
         entries.append(entry)
 
 # Merge HSK info with cedict file
+print_ct = 0
 for entry in entries:
     for i, level_set in enumerate(words_levels):
-        if (entry['simplified'], entry['pinyin']) in level_set:
+        if print_ct < print_max:
+            print(entry['simplified'], entry['pinyin'].replace(" ", ""))
+            print_ct += 1
+        if (entry['simplified'], entry['pinyin'].replace(" ", "")) in level_set:
             entry['HSK_level'] = i+1
         else:
             entry['HSK_level'] = None
