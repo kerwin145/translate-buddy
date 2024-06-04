@@ -2,7 +2,7 @@ import os
 import json
 import re
 
-pinyin_map = {
+vowel_map = {
     'a': 'āáǎà',
     'e': 'ēéěè',
     'i': 'īíǐì',
@@ -18,26 +18,36 @@ def parse_pinyin(pinyin):
     out = []
     for w in words:
         w = re.sub(r'u:', "ü", w)
-        
+        vowels = [c for c in w if c in vowel_map]
+
         if not w[-1].isdigit():
             out.append(w)
             continue
         tone = int(w[-1])
         w = w[:-1]
-        if tone == 5:
+        if tone == 5 or len(vowels) == 0:
             out.append(w)
             continue
+
+
+        # vowel rules from https://web.mit.edu/jinzhang/www/pinyin/spellingrules/index.html
+        w_list = list(w)
+        idx = w_list.index(vowels[0])
+
+        if len(vowels) == 1:
+            w_list[idx] = vowel_map[w_list[idx]][tone-1]
+            out.append("".join(w_list))
+            continue
         
-        cur = ""
-        vowelFound = False
-        for c in w:
-            if vowelFound or not c in pinyin_map:
-                cur += c
-                continue
-            vowelFound = True
-            cur += pinyin_map[c][tone-1]
-        out.append(cur)
-    
+        medials = ['i', 'u', 'ü']
+        if vowels[0] in medials:
+            idx2 = w_list.index(vowels[1], idx + 1)
+            w_list[idx2] = vowel_map[w_list[idx2]][tone-1]
+        else:
+            w_list[idx] = vowel_map[w_list[idx]][tone-1]
+        
+        out.append("".join(w_list))
+
     return " ".join(out)
 
 def parse_cedict_line(line):
@@ -60,37 +70,35 @@ def parse_cedict_line(line):
             definitions[i] = re.sub(pattern_pinyin_group, "[" + parse_pinyin(' '.join(re.findall(pattern_pinyin_single, pinyin_group[0]))) + "]", definitions[i])
         definitions[i] = re.sub(pattern_sth, "something", definitions[i])
         definitions[i] = re.sub(pattern_sb, "somebody", definitions[i])
+        definitions[i] = re.sub(r"CL:", "Measure word: ", definitions[i])
 
     return {
         'traditional': traditional,
         'simplified': simplified,
         'pinyin': parse_pinyin(pinyin),
         'definitions': [d for d in definitions if d],
-        'HSK_level': "",
+        'HSK_level': None,
+        'HSK_conf': None
     }
 
 ## merging hsk data
 
 HSK_LEVELS = 6
+words_pinyin_levels = [set() for _ in range(HSK_LEVELS)]
 words_levels = [set() for _ in range(HSK_LEVELS)]
-
-print_max = 20
-print_ct = 0
 
 # Populate HSK level data for words, where you have word and pinyin combo
 for idx in range(HSK_LEVELS):
-    with open(f"resources/{idx+1}", 'r', encoding='utf-8') as file:
+    with open(f"data/{idx+1}", 'r', encoding='utf-8') as file:
         for line in file:
-            word, pinyin = line.strip().split(None, 3)[1:3]
-            words_levels[idx].add((word, pinyin))
-            if print_ct < print_max:
-                print(word, pinyin)
-                print_ct += 1
+            groups = line.split("\t")
+            words_pinyin_levels[idx].add((groups[0], groups[3].replace(" ", "")))
+            words_levels[idx].add(groups[0])
 
 entries = []
 
 # Parse cedict file and put into JSON database
-with open('resources/cedict_ts.u8', 'r', encoding='utf-8') as f:
+with open('data/cedict_ts.u8', 'r', encoding='utf-8') as f:
     for line in f:
         if line.startswith('#') or not line.strip():
             continue
@@ -98,17 +106,24 @@ with open('resources/cedict_ts.u8', 'r', encoding='utf-8') as f:
         entries.append(entry)
 
 # Merge HSK info with cedict file
-print_ct = 0
+# First pass will require word and pinyin to match. Second pass only checks pinyin
+found = [0] * 6
 for entry in entries:
-    for i, level_set in enumerate(words_levels):
-        if print_ct < print_max:
-            print(entry['simplified'], entry['pinyin'].replace(" ", ""))
-            print_ct += 1
-        if (entry['simplified'], entry['pinyin'].replace(" ", "")) in level_set:
-            entry['HSK_level'] = i+1
-        else:
-            entry['HSK_level'] = None
+    for i in range(HSK_LEVELS):
+        level_set_wp = words_pinyin_levels[i]
+        level_set_w = words_levels[i]
+        if (entry['simplified'], entry['pinyin'].replace(" ", "")) in level_set_wp and entry['HSK_level'] is None:
+            entry['HSK_level'] = i + 1
+            entry['HSK_conf'] = 1
+            found[i] += 1
+            break
+        if entry['simplified'] in level_set_w and entry['HSK_level'] is None:
+            entry['HSK_level'] = i + 1
+            entry['HSK_conf'] = 0
+            found[i] += 1
+            break
 
+print("FOUND:", found)
 # Write JSON data to file
 with open('cedict.json', 'w', encoding='utf-8') as f:
     json.dump(entries, f, ensure_ascii=False, indent=2)

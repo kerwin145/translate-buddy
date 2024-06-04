@@ -6,8 +6,6 @@ Unzip, and run convert.py
 # Todo
 Due to the endless data processing that can be done to augment the dataset, the following are a list of todo-s that will have me actually build the front end 
 ### Phase 1: Basic functionality
-- Process data, and merge preliminary HSK levels to terms. Default HSK level of None, and in case of conflicts, don't override HSK level if previously existed (thus taking minimum across word lists)
-    - Check that content.js sorts properly
 - Have translate panel display word groupings, sorted by HSK level
 - Display stroke order for single word view
 - Display example sentences (from tatoeba, look for an API)

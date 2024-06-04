@@ -47,8 +47,8 @@ function sortEntries(){
   }).sort((a,b) => a.val - b.val).map(x => x.defs)
 
   highPriority = highPriority.sort((a, b) => {
-    const dif = a.HSK_level - b.HSK_level
-    if (dif !== 0) return dif;
+    if (a.HSK_level - b.HSK_level !== 0) return a.HSK_level - b.HSK_level;
+    if (b.HSK_conf - a.HSK_conf !== 0) return b.HSK_conf - a.HSK_conf; //higher conf goes first
     return b.definitions.length - a.definitions.length; // Longer list of definitions goes first 
   });
 
