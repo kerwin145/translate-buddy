@@ -95,3 +95,24 @@
   gap: 4px;
   align-items: center;
 }
+
+
+/* Compound word styles */
+.translate-compounds h5{
+  font-size: medium;
+}
+.translate-comp-def-hidden{
+  display: none;
+}
+
+.translate-comp span{
+  font-size: small;
+  background-color: ghostwhite;
+  border: 1px solid #a7a;
+  border-radius: 4px;
+  padding: 4px 8px;
+}
+
+.translate-comp span:hover{
+  background-color: #eef;
+}
