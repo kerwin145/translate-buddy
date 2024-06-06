@@ -6,7 +6,6 @@ Unzip, and run convert.py
 # Todo
 Due to the endless data processing that can be done to augment the dataset, the following are a list of todo-s that will have me actually build the front end 
 ### Phase 1: Basic functionality
-- Have translate panel display word groupings, sorted by HSK level
 - Display stroke order for single word view
 - Display example sentences (from tatoeba, look for an API)
 - Use script to check if there are words with ambigious HSK levels, and manually adjust cedict entries to reconcile differences

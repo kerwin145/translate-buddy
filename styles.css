@@ -4,10 +4,11 @@
   right: 20px;
   padding: 1rem calc(1rem + 20px);
   color: indigo;
-  background-color: aliceblue;
+  background-color: rgb(240, 248, 255);
   border-radius: 10px;
   z-index: 9999;
   min-width: 200px;
+  /* max-width: max(30vh, 350px); */
 }
 
 .translate-selectedText{
@@ -34,6 +35,8 @@
 
 .translate-results{
   margin: auto;
+  width: fit-content;
+  max-width: 25vh;
 }
 
 .translate-header{
@@ -60,20 +63,23 @@
   color: gray;
 }
 
+/* .trans-char-fullwidth{
+  grid-column: 1/3;
+} */
 
 /* Styling for the second row */
-.translate-header > #trans-simp-char, .translate-header > #trans-trad-char {
+#trans-simp-char, #trans-trad-char {
   background-color: ghostwhite;
   margin: 0 -8px;
   padding: 4px 16px;
   border-radius: 8px;
 }
 
-.translate-header > #trans-trad-char{
+#trans-trad-char{
   border-right: none;
 }
 
-.translate-header > #trans-simp-char{
+#trans-simp-char{
   border-left: none;
 }
 
@@ -98,17 +104,59 @@
 
 
 /* Compound word styles */
+.translate-compounds{
+  padding-bottom: 1rem;
+  margin-bottom: 1rem;
+  overflow: auto;
+  max-height: 35vh;
+}
+
+.translate-no-compounds{
+  color: rgba(0,0,0,.35);
+  margin: auto;
+  max-width: 400px;
+  text-overflow: ellipsis;
+}
+
 .translate-compounds h5{
   font-size: medium;
 }
-.translate-comp-def-hidden{
+
+.translate-comp-entry-container{
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.translate-comp-definitions{
   display: none;
+  position: absolute;
+  font-size: small;
+  right: 0;
+  background-color: aliceblue;
+  border: 1px solid rgba(180,185,192, .7);
+  color: #414;
+  border-radius: 5px;
+  padding: 8px;
+  margin-top: 8px;
+  text-wrap: pretty;
+  list-style-type: circle;
+  list-style-position: inside;
+  max-width: max(250px, 20vw);
+}
+
+#translation-panel ul li{
+  list-style: disc inside;
+}
+
+.translate-comp:hover .translate-comp-definitions{
+  display: block;
 }
 
 .translate-comp span{
   font-size: small;
   background-color: ghostwhite;
-  border: 1px solid #a7a;
+  border: 1px solid #c9cc;
   border-radius: 4px;
   padding: 4px 8px;
 }
@@ -116,3 +164,4 @@
 .translate-comp span:hover{
   background-color: #eef;
 }
+

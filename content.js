@@ -1,12 +1,14 @@
 //store state for translation results
 let tr_data = {text: "", page: null, entries: [], compounds: []}
 
+function handleTranslate(text){
+  tr_data = {text, page: null, entries: [], compounds: []}
+  searchWord(text)
+  showTranslationPanel();
+}
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === "showTranslationPanel") {
-    let text = message.selectedText
-    tr_data = {text, page: null, entries: [], compounds: []}
-    searchWord(text)
-    showTranslationPanel();
+    handleTranslate(message.selectedText)
   } else if (message.action === "noMessage"){
     alert("No highlighted text detected.")
   }
@@ -50,18 +52,19 @@ async function showTranslationPanel() {
 
     DOMheader.innerHTML = `
       <span>${pinyin}</span>
-      <div id = "trans-trad-char">${traditional}</div>
       <div id = "trans-simp-char">${simplified}</div>
-      <small>Traditional</small>
+      <div id = "trans-trad-char">${traditional}</div>
       <small>Simplified</small>
+      <small>Traditional</small>
     `
     DOMheader.classList.add('translate-header')
 
-    const DOMdefinitions = document.createElement('ol')
+    const DOMdefinitions = document.createElement('ul')
     for(const d of definitions) DOMdefinitions.innerHTML += `<li>${d}</li>`
 
     DOMresults.insertAdjacentHTML("beforeend", `<h3>Definitions</h3>`)
     DOMresults.appendChild(DOMdefinitions)
+    generateCompoundList(DOMresults)
 
     if(tr_data.entries.length > 1){
       const DOMcontrol = document.createElement('div')
@@ -77,11 +80,11 @@ async function showTranslationPanel() {
       if(tr_data.page == 0)
         leftArrow.classList.add('tr-nav-disabled')
       if(tr_data.page < tr_data.entries.length - 1)
-        rightArrow.addEventListener('click', () => {tr_data.page++; closeTranslationPanel(); showTranslationPanel()})
+        rightArrow.addEventListener('click', () => {tr_data.page++; showTranslationPanel()})
       if(tr_data.page == tr_data.entries.length - 1)
         rightArrow.classList.add('tr-nav-disabled')
       if(tr_data.page > 0)
-        leftArrow.addEventListener('click', () => {tr_data.page--; closeTranslationPanel(); showTranslationPanel()})
+        leftArrow.addEventListener('click', () => {tr_data.page--; showTranslationPanel()})
 
       DOMcontrol.appendChild(leftArrow)
       DOMcontrol.appendChild(counter)
@@ -113,26 +116,32 @@ function handleOutsideClick(event) {
 function generateCompoundList(parent){
   let DOMcompounds = document.createElement('div')
   parent.appendChild(DOMcompounds)
+  DOMcompounds.className = "translate-compounds"
 
   if(tr_data.compounds.length == 0){
     DOMcompounds.className = "translate-compounds"
-    DOMcompounds.innerHTML = `No compound words using ${tr_data.text} found!`
+
+    if(tr_data.text.length >= 10)
+      DOMcompounds.innerHTML = `No compound words using ${tr_data.text.substring(0,10)}... found!`
+    else
+      DOMcompounds.innerHTML = `No compound words using ${tr_data.text} found!`
+
+    DOMcompounds.classList.add('translate-no-compounds')
     return
   }
 
-
-  DOMcompounds.className = "translate-compounds"
   let DOMcompounds_header = document.createElement('h5')
   DOMcompounds_header.innerHTML = `Compound words using ${tr_data.text}`
   let DOMcompounds_elements = document.createElement('div')
+  DOMcompounds_elements.className = "translate-comp-entry-container"
 
   DOMcompounds.appendChild(DOMcompounds_header)
   DOMcompounds.appendChild(DOMcompounds_elements)
 
   for(let compound of tr_data.compounds){
-    console.log(compound)
     let DOMcomp = document.createElement('div')
     DOMcomp.className = "translate-comp"
+    DOMcomp.addEventListener("dblclick", () => {handleTranslate(compound.word)})
 
     DOMcompounds_elements.appendChild(DOMcomp)
 
@@ -141,8 +150,8 @@ function generateCompoundList(parent){
     DOMcomp.appendChild(DOMcomp_word)
 
     let DOMcomp_definitions = document.createElement('ul')
-    DOMcomp_definitions.innerHTML = "Definitions:"
-    DOMcomp_definitions.className = "translate-comp-definitions translate-comp-def-hidden"
+    DOMcomp_definitions.innerHTML = `(${compound.pinyin}) Definitions:`
+    DOMcomp_definitions.className = "translate-comp-definitions"
     DOMcomp.appendChild(DOMcomp_definitions)
     for (let def of compound.definitions){
       let DOM_comp_def = document.createElement('li')
@@ -167,7 +176,6 @@ function searchWord(word){
   tr_data.page = 0;
   tr_data.entries = sortEntries(dictionaryData.filter(x => x.simplified === word || x.traditional === word))
   tr_data.compounds = sortEntries(searchAdjWords(word))
-  console.log(tr_data)
 }
 
 function searchAdjWords(word){
@@ -180,7 +188,7 @@ function searchAdjWords(word){
       continue
 
     if (entry.simplified.includes(word) || entry.traditional.includes(word))
-        compounds.push({ word: entry.simplified, definitions: [...entry.definitions], HSK_level: entry.HSK_level, HSK_conf: entry.HSK_conf });
+        compounds.push({ word: entry.simplified, pinyin: entry.pinyin, definitions: [...entry.definitions], HSK_level: entry.HSK_level, HSK_conf: entry.HSK_conf });
   }
 
   return compounds
