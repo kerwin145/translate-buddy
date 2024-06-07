@@ -1,6 +1,7 @@
 import os
 import json
 import re
+import math
 
 vowel_map = {
     'a': 'āáǎà',
@@ -50,6 +51,11 @@ def parse_pinyin(pinyin):
 
     return " ".join(out)
 
+def isValidChar(char):
+    return (ord('\u4E00') <= ord(char) <= ord('\u9FFF')) or (ord('a') <= ord(char) <= ord('z')) or (ord('A') <= ord(char) <= ord('Z'))
+
+word_count = {}
+
 def parse_cedict_line(line):
     parts = line.split(' ')
     traditional = parts[0]
@@ -72,17 +78,21 @@ def parse_cedict_line(line):
         definitions[i] = re.sub(pattern_sb, "somebody", definitions[i])
         definitions[i] = re.sub(r"CL:", "Measure word: ", definitions[i])
 
+    for char in simplified:
+        if isValidChar(char):
+            word_count[char] = word_count.get(char, 0) + 1
+
     return {
         'traditional': traditional,
         'simplified': simplified,
         'pinyin': parse_pinyin(pinyin),
         'definitions': [d for d in definitions if d],
         'HSK_level': None,
-        'HSK_conf': None
+        'HSK_conf': None,
+        'word_rank': 0 #kinda like page rank but not really
     }
 
 ## merging hsk data
-
 HSK_LEVELS = 6
 words_pinyin_levels = [set() for _ in range(HSK_LEVELS)]
 words_levels = [set() for _ in range(HSK_LEVELS)]
@@ -123,7 +133,19 @@ for entry in entries:
             found[i] += 1
             break
 
+# update work rank
+for entry in entries:
+    score = 0
+    for char in entry['simplified']:
+        if isValidChar(char):
+            score += 1/word_count[char]
+    if score > 0:
+        entry['word_rank'] = (1/score * 10000) // 100
+
 print("FOUND:", found)
 # Write JSON data to file
+if os.path.exists('cedict.json'):
+    os.remove('cedict.json')
+
 with open('cedict.json', 'w', encoding='utf-8') as f:
     json.dump(entries, f, ensure_ascii=False, indent=2)

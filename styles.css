@@ -16,7 +16,7 @@
   margin-bottom: 0.5rem;
   padding: 4px 1rem;
   width: fit-content;
-  max-width: 400px;
+  max-width: 35vw;
   text-overflow: ellipsis;
   white-space: nowrap;
   overflow: hidden;
@@ -27,7 +27,7 @@
 
 .close-btn{
   cursor: pointer;
-  font-size: 1rem;
+  font-size: 4rem;
   position: absolute;
   top: 20px;
   right: 20px
@@ -55,6 +55,13 @@
   grid-row: 1/2;
   grid-column: 1/3;
   font-size: small;
+}
+
+.translation-definitions{
+  font-size: medium;
+}
+#translation-panel ul li{
+  list-style: disc inside;
 }
 
 /* Styling for the first row */
@@ -142,11 +149,7 @@
   text-wrap: pretty;
   list-style-type: circle;
   list-style-position: inside;
-  max-width: max(250px, 20vw);
-}
-
-#translation-panel ul li{
-  list-style: disc inside;
+  max-width: max(300px, 25vw);
 }
 
 .translate-comp:hover .translate-comp-definitions{
@@ -154,7 +157,7 @@
 }
 
 .translate-comp span{
-  font-size: small;
+  font-size: 1.4rem;
   background-color: ghostwhite;
   border: 1px solid #c9cc;
   border-radius: 4px;

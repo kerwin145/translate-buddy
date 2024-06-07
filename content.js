@@ -60,6 +60,7 @@ async function showTranslationPanel() {
     DOMheader.classList.add('translate-header')
 
     const DOMdefinitions = document.createElement('ul')
+    DOMdefinitions.classList = "translation-definitions"
     for(const d of definitions) DOMdefinitions.innerHTML += `<li>${d}</li>`
 
     DOMresults.insertAdjacentHTML("beforeend", `<h3>Definitions</h3>`)
@@ -141,12 +142,12 @@ function generateCompoundList(parent){
   for(let compound of tr_data.compounds){
     let DOMcomp = document.createElement('div')
     DOMcomp.className = "translate-comp"
-    DOMcomp.addEventListener("dblclick", () => {handleTranslate(compound.word)})
+    DOMcomp.addEventListener("dblclick", () => {handleTranslate(compound.simplified)})
 
     DOMcompounds_elements.appendChild(DOMcomp)
 
     let DOMcomp_word = document.createElement('span')
-    DOMcomp_word.innerHTML = compound.word
+    DOMcomp_word.innerHTML = compound.simplified
     DOMcomp.appendChild(DOMcomp_word)
 
     let DOMcomp_definitions = document.createElement('ul')
@@ -180,30 +181,26 @@ function searchWord(word){
 
 function searchAdjWords(word){
   if(!dictionaryData) return null
-  //returns [{compound word, definitions, HSK_level, HSK_conf}, {compound word, definitions, HSK_level, HSK_conf} ...]
-  let compounds = []
-
-  for (let entry of dictionaryData){
-    if (entry.simplified.length === 1 || entry.simplified === word || entry.traditional === word)
-      continue
-
-    if (entry.simplified.includes(word) || entry.traditional.includes(word))
-        compounds.push({ word: entry.simplified, pinyin: entry.pinyin, definitions: [...entry.definitions], HSK_level: entry.HSK_level, HSK_conf: entry.HSK_conf });
-  }
-
-  return compounds
+  let out = dictionaryData.filter(
+    entry => (!(entry.simplified.length === 1 || entry.simplified === word || entry.traditional === word))
+            && (entry.simplified.includes(word) || entry.traditional.includes(word)))
+  console.log(out)
+  return out
 }
 
 function sortEntries(entries){
   if (tr_data.text == "" || entries.length <= 1)
       return entries
 
-  //Remove translations with "surname" and "variant of", as they are least useful
+  //Remove translations consisting only of "surname" and "variant of", as they are least useful
   let { lowPriority, highPriority } = entries.reduce((acc, x) => {
-    if (x.definitions.some(D => {
-        let d = D.toLowerCase()
-        return d.includes("surname") || d.includes("variant of") || d.includes("used in ")
-    })) 
+    let count = 0
+    for (let d of x.definitions){
+      if (d.includes("surname") || d.includes("variant of") || d.includes("used in ")) 
+        count++
+    }
+
+    if (count == x.definitions.length)
         acc.lowPriority.push(x);
      else 
         acc.highPriority.push(x);
@@ -223,10 +220,15 @@ function sortEntries(entries){
   highPriority = highPriority.sort((a, b) => {
     if(a.HSK_level != null && b.HSK_level == null) return -1
     if(a.HSK_level == null && b.HSK_level != null) return 1
-    if (a.HSK_level - b.HSK_level !== 0) return a.HSK_level - b.HSK_level;
+    if (a.HSK_level != null && b.HSK_level != null && a.HSK_level - b.HSK_level !== 0) return a.HSK_level - b.HSK_level;
     
-    if (b.HSK_conf - a.HSK_conf !== 0) return b.HSK_conf - a.HSK_conf; //higher conf goes first
-    return b.definitions.length - a.definitions.length; // Longer list of definitions goes first 
+    if (a.HSK_conf == 1 && b.HSK_conf == 0) return -1
+    if (a.HSK_conf == 0 && b.HSK_conf == 1) return 1
+
+    // console.log("sorting by word rank")
+    return b.word_rank - a.word_rank
+    
+    // return b.definitions.length - a.definitions.length; // Longer list of definitions goes first 
   });
 
   
