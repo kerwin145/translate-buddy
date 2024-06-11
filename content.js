@@ -212,7 +212,7 @@ function findAll(str, subStr) {
 
 function searchSubCompounds(sentence = ""){
   if(!dictionaryData || sentence.length <= 2) return []
-
+                                                                                                                                                        
   let wordSet = new Set(sentence)
   let candidateSet = new Set()
 
@@ -220,8 +220,13 @@ function searchSubCompounds(sentence = ""){
   //1. Instead of substring search, we will only search the candidates at the positions for which that char appears
   //This means we need to make wordset into a map: char => positions of the char in the sentence
 
-  //2. To speed up the process of getting candidateSet, we can make a reverse index, mapping only single characters to all the compound words having it
+  //2a. To speed up the process of getting candidateSet, we can make a reverse index, mapping only single characters to all the compound words having it
   // This means instead of iterating through entire dictionary for each word, we can just search the reverse index
+
+  //2b. To further improve 2a, as a huge candidate set could be a bottleneck, we can actually make the reverse index have a key of 2 character groups. 
+  //This will greatly reduce the size of candidate set. 
+  // It may introduce a slew of keys in the inverted index, but the list of compound words for each key will be greatly reduced. 
+  // Wordset will thus have elements be compound words of length 2 instead of a character, but it's usage won't differ from 2a
 
   for(let word of wordSet){
     for(let entry of dictionaryData){
