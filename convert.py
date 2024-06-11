@@ -149,3 +149,5 @@ if os.path.exists('cedict.json'):
 
 with open('cedict.json', 'w', encoding='utf-8') as f:
     json.dump(entries, f, ensure_ascii=False, indent=2)
+
+## TODO: Make a reverse index

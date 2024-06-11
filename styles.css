@@ -11,6 +11,11 @@
   /* max-width: max(30vh, 350px); */
 }
 
+
+#translation-panel h3{
+  font-size: large;
+}
+
 .translate-selectedText{
   margin: 0 auto;
   margin-bottom: 0.5rem;
@@ -27,7 +32,7 @@
 
 .close-btn{
   cursor: pointer;
-  font-size: 4rem;
+  font-size: large;
   position: absolute;
   top: 20px;
   right: 20px
@@ -36,9 +41,12 @@
 .translate-results{
   margin: auto;
   width: fit-content;
-  max-width: 25vh;
+  max-width: 30vh;
 }
 
+.translate-results ul{
+  font-size: medium;
+}
 .translate-header{
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -80,6 +88,7 @@
   margin: 0 -8px;
   padding: 4px 16px;
   border-radius: 8px;
+  font-size: x-large;
 }
 
 #trans-trad-char{
@@ -88,6 +97,10 @@
 
 #trans-simp-char{
   border-left: none;
+}
+
+.tranlsate-fontsmall > #trans-simp-char, .tranlsate-fontsmall > #trans-trad-char{
+  font-size: large;
 }
 
 .translate-results li{
@@ -114,8 +127,6 @@
 .translate-compounds{
   padding-bottom: 1rem;
   margin-bottom: 1rem;
-  overflow: auto;
-  max-height: 35vh;
 }
 
 .translate-no-compounds{
@@ -127,12 +138,33 @@
 
 .translate-compounds h5{
   font-size: medium;
+  margin: 1rem 0;
 }
 
 .translate-comp-entry-container{
   display: flex;
-  gap: 1rem;
+  gap: 12px;
   flex-wrap: wrap;
+  max-height: 35vh;
+  overflow-y: scroll;
+  padding: 4px 0;
+}
+
+.translate-comp-entry-container::-webkit-scrollbar{
+  width: 8px;
+  opacity: 85%;
+}
+
+.translate-comp-entry-container::-webkit-scrollbar-thumb{
+background: rgb(192,192,192);
+border-radius: 4px;
+opacity: 85%;
+}
+
+.translate-comp-entry-container::-webkit-scrollbar-track{
+border-radius: 10px;
+background: rgb(232,232,232);
+opacity: 85%;
 }
 
 .translate-comp-definitions{
@@ -157,11 +189,17 @@
 }
 
 .translate-comp span{
-  font-size: 1.4rem;
+  font-size: medium;
   background-color: ghostwhite;
   border: 1px solid #c9cc;
   border-radius: 4px;
   padding: 4px 8px;
+}
+
+.translate-comp span.translate-propernoun{
+  border: 1px dashed royalblue;
+  background: aliceblue;
+  color: navy;
 }
 
 .translate-comp span:hover{

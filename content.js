@@ -1,11 +1,16 @@
 //store state for translation results
 let tr_data = {text: "", page: null, entries: [], compounds: []}
+let translationPanel = null;
 
-function handleTranslate(text){
-  tr_data = {text, page: null, entries: [], compounds: []}
-  searchWord(text)
-  showTranslationPanel();
-}
+//Load dictionary  
+let dictionaryData = null;
+
+fetch(chrome.runtime.getURL('cedict.json'))
+  .then(res => res.json())
+  .then(data => {dictionaryData = data})
+  .catch(err => console.error("Error loading dictionary data"))
+
+
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === "showTranslationPanel") {
     handleTranslate(message.selectedText)
@@ -13,6 +18,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     alert("No highlighted text detected.")
   }
 });
+
+function handleTranslate(text){
+  tr_data = {text, page: null, entries: [], compounds: []}
+  searchWord(text)
+  showTranslationPanel();
+}
 
 async function showTranslationPanel() {
   if (translationPanel) 
@@ -22,6 +33,10 @@ async function showTranslationPanel() {
   const container = document.createElement('div')
   container.id = "translation-panel"
   document.body.appendChild(container)
+
+  //Get possible sub compounds
+  /*------------ TO DO ------------ */ 
+  console.log(searchSubCompounds(tr_data.text))
 
   try {
     let html = 
@@ -40,9 +55,10 @@ async function showTranslationPanel() {
     let DOMresults = document.querySelector(".translate-results")
     let DOMheader = document.querySelector(".translate-selectedText")
 
+    
     if (tr_data.entries.length == 0){
       DOMresults.innerHTML = "Not in my dictionary, sorry! :("
-      generateCompoundList(DOMresults)
+      makeCompoundListHTML(DOMresults)
       return
     }
 
@@ -59,13 +75,17 @@ async function showTranslationPanel() {
     `
     DOMheader.classList.add('translate-header')
 
+    if(simplified.length >= 6){
+      DOMheader.classList.add('tranlsate-fontsmall')
+    }
+
     const DOMdefinitions = document.createElement('ul')
     DOMdefinitions.classList = "translation-definitions"
     for(const d of definitions) DOMdefinitions.innerHTML += `<li>${d}</li>`
 
     DOMresults.insertAdjacentHTML("beforeend", `<h3>Definitions</h3>`)
     DOMresults.appendChild(DOMdefinitions)
-    generateCompoundList(DOMresults)
+    makeCompoundListHTML(DOMresults)
 
     if(tr_data.entries.length > 1){
       const DOMcontrol = document.createElement('div')
@@ -114,7 +134,7 @@ function handleOutsideClick(event) {
 }
 
 //HTML helpers. I wish i could write this in react ;-;
-function generateCompoundList(parent){
+function makeCompoundListHTML(parent){
   let DOMcompounds = document.createElement('div')
   parent.appendChild(DOMcompounds)
   DOMcompounds.className = "translate-compounds"
@@ -131,7 +151,7 @@ function generateCompoundList(parent){
     return
   }
 
-  let DOMcompounds_header = document.createElement('h5')
+  let DOMcompounds_header = document.createElement('h3')
   DOMcompounds_header.innerHTML = `Compound words using ${tr_data.text}`
   let DOMcompounds_elements = document.createElement('div')
   DOMcompounds_elements.className = "translate-comp-entry-container"
@@ -148,6 +168,8 @@ function generateCompoundList(parent){
 
     let DOMcomp_word = document.createElement('span')
     DOMcomp_word.innerHTML = compound.simplified
+    if(isProperNoun(compound.pinyin))
+      DOMcomp_word.classList.add('translate-propernoun')
     DOMcomp.appendChild(DOMcomp_word)
 
     let DOMcomp_definitions = document.createElement('ul')
@@ -162,20 +184,10 @@ function generateCompoundList(parent){
   }
 }
 
-
- //Diciontary stuff  
-let dictionaryData = null;
-let translationPanel = null;
-
-fetch(chrome.runtime.getURL('cedict.json'))
-  .then(res => res.json())
-  .then(data => {dictionaryData = data})
-  .catch(err => console.error("Error loading dictionary data"))
-
 function searchWord(word){
   if(!dictionaryData) return null
   tr_data.page = 0;
-  tr_data.entries = sortEntries(dictionaryData.filter(x => x.simplified === word || x.traditional === word))
+  tr_data.entries = sortEntries(dictionaryData.filter(x => x.simplified === word || x.traditional === word), true)
   tr_data.compounds = sortEntries(searchAdjWords(word))
 }
 
@@ -184,11 +196,59 @@ function searchAdjWords(word){
   let out = dictionaryData.filter(
     entry => (!(entry.simplified.length === 1 || entry.simplified === word || entry.traditional === word))
             && (entry.simplified.includes(word) || entry.traditional.includes(word)))
-  console.log(out)
+  // console.log(out)
   return out
 }
 
-function sortEntries(entries){
+//helper
+function findAll(str, subStr) {
+  let indexes = [];
+  let index = -1;
+  while ((index = str.indexOf(subStr, index + 1)) !== -1) {
+      indexes.push(index);
+  }
+  return indexes;
+}
+
+function searchSubCompounds(sentence = ""){
+  if(!dictionaryData || sentence.length <= 2) return []
+
+  let wordSet = new Set(sentence)
+  let candidateSet = new Set()
+
+  //TODO: Performance optimizations 
+  //1. Instead of substring search, we will only search the candidates at the positions for which that char appears
+  //This means we need to make wordset into a map: char => positions of the char in the sentence
+
+  //2. To speed up the process of getting candidateSet, we can make a reverse index, mapping only single characters to all the compound words having it
+  // This means instead of iterating through entire dictionary for each word, we can just search the reverse index
+
+  for(let word of wordSet){
+    for(let entry of dictionaryData){
+      if (!candidateSet.has(entry) && entry.simplified.length > 1 && (entry.simplified.includes(word) || entry.traditional.includes(word)))
+        candidateSet.add(entry)
+    }
+  }
+
+  let compounds = []
+  for(let cand of candidateSet){
+    let idxSimp = findAll(sentence, cand.simplified)
+    let idxTrad = findAll(sentence, cand.traditional)
+    if(idxSimp.length > 0 || idxTrad.length > 0){
+      compounds.push({cand, indexes: Array.from(new Set([...idxSimp, ...idxTrad])).sort((a, b) => a - b)})
+    }
+  }
+
+  return compounds.sort((a,b) => a.indexes[0] - b.indexes[0])
+  
+}
+
+function isProperNoun(pinyin){
+  const capitalRegex = /[A-ZĀÁǍÀĒÉĚÈĪÍǏÌŌÓǑÒŪÚǓÙÜǗǙǛ]/;
+  return capitalRegex.test(pinyin)
+}
+
+function sortEntries(entries, properNounPenealty = false){
   if (tr_data.text == "" || entries.length <= 1)
       return entries
 
@@ -196,11 +256,12 @@ function sortEntries(entries){
   let { lowPriority, highPriority } = entries.reduce((acc, x) => {
     let count = 0
     for (let d of x.definitions){
-      if (d.includes("surname") || d.includes("variant of") || d.includes("used in ")) 
+      //differentiate old variant of and variant of
+      if (d.includes("surname") || d.includes("variant of") || d.includes("used in ") || d.includes("(archaic)"))
         count++
     }
 
-    if (count == x.definitions.length)
+    if (count == x.definitions.length || (properNounPenealty && isProperNoun(x.pinyin)))
         acc.lowPriority.push(x);
      else 
         acc.highPriority.push(x);
@@ -225,12 +286,8 @@ function sortEntries(entries){
     if (a.HSK_conf == 1 && b.HSK_conf == 0) return -1
     if (a.HSK_conf == 0 && b.HSK_conf == 1) return 1
 
-    // console.log("sorting by word rank")
     return b.word_rank - a.word_rank
-    
-    // return b.definitions.length - a.definitions.length; // Longer list of definitions goes first 
   });
 
-  
   return highPriority.concat(lowPriority);
 }
