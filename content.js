@@ -200,49 +200,64 @@ function searchAdjWords(word){
   return out
 }
 
-//helper
-function findAll(str, subStr) {
-  let indexes = [];
-  let index = -1;
-  while ((index = str.indexOf(subStr, index + 1)) !== -1) {
-      indexes.push(index);
+const invertedIndex = new Map()
+buildInvertedIndex()
+
+function buildInvertedIndex(){
+  if(!dictionaryData) return
+
+  for(const obj of dictionaryData){
+    let {simplified, traditional} = obj
+    if(simplified.length <= 1) continue
+
+    let checkSet = new Set() //prevent duplicates within current entry
+    for(let i = 0; i < simplified.length-1; i++){
+      let s = simplified.substring(i, i+2)
+      let t = traditional.substring(i, i+2) 
+      if(!checkSet.has(s)){
+        if(invertedIndex.has(s))
+          invertedIndex.set(s, invertedIndex.get(s).push(simplified))
+        else
+          invertedIndex.set(s, [simplified])
+        checkSet.add(s)
+      }
+      if(!checkSet.has(t)){
+        if(invertedIndex.has(t))
+          invertedIndex.set(t, invertedIndex.get(t).push(traditional))
+        else
+          invertedIndex.set(t, [traditional])
+        checkSet.add(t)
+      }
+    }
   }
-  return indexes;
 }
 
 function searchSubCompounds(sentence = ""){
   if(!dictionaryData || sentence.length <= 2) return []
-                                                                                                                                                        
-  let wordSet = new Set(sentence)
-  let candidateSet = new Set()
-
-  //TODO: Performance optimizations 
-  //1. Instead of substring search, we will only search the candidates at the positions for which that char appears
-  //This means we need to make wordset into a map: char => positions of the char in the sentence
-
-  //2a. To speed up the process of getting candidateSet, we can make a reverse index, mapping only single characters to all the compound words having it
-  // This means instead of iterating through entire dictionary for each word, we can just search the reverse index
-
-  //2b. To further improve 2a, as a huge candidate set could be a bottleneck, we can actually make the reverse index have a key of 2 character groups. 
-  //This will greatly reduce the size of candidate set. 
-  // It may introduce a slew of keys in the inverted index, but the list of compound words for each key will be greatly reduced. 
-  // Wordset will thus have elements be compound words of length 2 instead of a character, but it's usage won't differ from 2a
-
-  for(let word of wordSet){
-    for(let entry of dictionaryData){
-      if (!candidateSet.has(entry) && entry.simplified.length > 1 && (entry.simplified.includes(word) || entry.traditional.includes(word)))
-        candidateSet.add(entry)
+                         
+  let wordMap = new Map()
+  for(let i = 0; i < sentence.length - 1; i++){
+    let key = sentence.substring(i, i + 2)
+    if(wordMap.has(key)){ 
+      wordMap.set(key, wordMap.get(key).push(i))
+    }else{
+      wordMap.set(key, [i])
     }
   }
 
-  let compounds = []
-  for(let cand of candidateSet){
-    let idxSimp = findAll(sentence, cand.simplified)
-    let idxTrad = findAll(sentence, cand.traditional)
-    if(idxSimp.length > 0 || idxTrad.length > 0){
-      compounds.push({cand, indexes: Array.from(new Set([...idxSimp, ...idxTrad])).sort((a, b) => a - b)})
+  let candidates = [] //elements include: {Phrase, indexes where the phrase could start at}
+  for(let word of wordMap){
+    let allPhrases = invertedIndex.get(word)
+    let possibleIndexes = wordMap.get(word)
+    //walk through all phrases including the word
+    for(let phrase of allPhrases){
+      //only add a phrase as a candidate if the phrase starts with that word (this prevents duplicates)
+      if(word === phrase.substring(0,2)){
+        candidates.push({phrase, checkIdx: possibleIndexes})
+      }
     }
   }
+
 
   return compounds.sort((a,b) => a.indexes[0] - b.indexes[0])
   
