@@ -8,8 +8,7 @@ for el in jsonData:
     str = el['simplified']
     if len(str) < 2:
         continue
-    for i in range(len(str) - 1):
-        words.add(str[i:i+2])
-        words.add(el['traditional'][i:i+2])
+    words.add(str[0:2])
+    words.add(el['traditional'][0:2])
 print(len(words))
 print(count)

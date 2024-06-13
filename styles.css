@@ -8,7 +8,7 @@
   border-radius: 10px;
   z-index: 9999;
   min-width: 200px;
-  /* max-width: max(30vh, 350px); */
+  max-width: 25vw;
 }
 
 
@@ -16,12 +16,16 @@
   font-size: large;
 }
 
+.translate-noresults{
+  margin-bottom: 1rem;
+}
+
 .translate-selectedText{
   margin: 0 auto;
   margin-bottom: 0.5rem;
   padding: 4px 1rem;
   width: fit-content;
-  max-width: 35vw;
+  max-width: 20vw;
   text-overflow: ellipsis;
   white-space: nowrap;
   overflow: hidden;
@@ -41,7 +45,6 @@
 .translate-results{
   margin: auto;
   width: fit-content;
-  max-width: 30vh;
 }
 
 .translate-results ul{
@@ -67,9 +70,12 @@
 
 .translation-definitions{
   font-size: medium;
+  margin-bottom: 1rem;
 }
+
 #translation-panel ul li{
   list-style: disc inside;
+  line-height: 1.25;
 }
 
 /* Styling for the first row */
@@ -132,7 +138,6 @@
 .translate-no-compounds{
   color: rgba(0,0,0,.35);
   margin: auto;
-  max-width: 400px;
   text-overflow: ellipsis;
 }
 
@@ -145,9 +150,9 @@
   display: flex;
   gap: 12px;
   flex-wrap: wrap;
-  max-height: 35vh;
-  overflow-y: scroll;
-  padding: 4px 0;
+  max-height: 20vh;
+  overflow-y: auto;
+  padding: 6px 0;
 }
 
 .translate-comp-entry-container::-webkit-scrollbar{
@@ -181,7 +186,6 @@ opacity: 85%;
   text-wrap: pretty;
   list-style-type: circle;
   list-style-position: inside;
-  max-width: max(300px, 25vw);
 }
 
 .translate-comp:hover .translate-comp-definitions{
