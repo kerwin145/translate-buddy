@@ -4,9 +4,9 @@ To set up, you will have to download the chinese english dictionary from https:/
 Unzip, and run convert.py
 
 # Todo
-Due to the endless data processing that can be done to augment the dataset, the following are a list of todo-s that will have me actually build the front end 
 ### Phase 1: Basic functionality
-- Display stroke order for single word view
+- To further improve sorting order of a word, if a word has different pinyin, we can rank it by searching all compounds containing the word and summing by the occurence of the pin yins. More occurences means better rank (more likely that the pronounciation is fitting)
+- Display stroke order for single word view as an extendable side panel
 - Display example sentences (from tatoeba, look for an API)
 - Use script to check if there are words with ambigious HSK levels, and manually adjust cedict entries to reconcile differences
 - Display HSK level for words that are in the HSK word list

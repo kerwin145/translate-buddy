@@ -1,4 +1,5 @@
-let tr_data = {text: "", page: null, entries: [], compounds: [], subCompounds: []}
+//initializing this here to show structure. Who needs object oriented programming?
+let tr_data = {text: "", page: null, entries: [], compounds: [], subCompounds: [], strokeImgUrl: ""}
 const invertedIndex = new Map()
 let dictionaryData = null;
 let dictionaryDataIndexed = new Map() //allows O(1) retrieval where the key is the simplified word. The value is a list of entries with that key (as a single word can have multiple entries)
@@ -25,19 +26,21 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
 
 function handleTranslate(text, tabId){
   if(!dictionaryData){
-    chrome.tabs.sendMessage(tab.id, { action: "nodata"})
+    chrome.tabs.sendMessage(tabId, { action: "nodata"})
   }
 
-  tr_data = {text, page: null, entries: [], compounds: [], subCompounds: []}
+  let tr_data = {text: "", page: null, entries: [], compounds: [], subCompounds: [], strokeImgUrl: ""}
+  tr_data.text = text;
   tr_data.page = 0;
   tr_data.entries = sortEntries(dictionaryData.filter(x => x.simplified === text || x.traditional === text), true)
   tr_data.compounds = sortEntries(searchAdjWords(text))
   tr_data.subCompounds = searchSubCompounds(text) 
+  if(text.length === 1)
+    tr_data.strokeImgUrl = `https://www.strokeorder.com/assets/bishun/guide/${text.charCodeAt(0)}.png`
   
   chrome.storage.local.set({ text }, () => {
-    chrome.tabs.sendMessage(tabId, { action: "showTranslationPanel", data: tr_data
-  }); 
-});
+    chrome.tabs.sendMessage(tabId, { action: "showTranslationPanel", data: tr_data });
+  });
 }
 
 fetch(chrome.runtime.getURL('cedict.json'))

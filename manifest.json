@@ -3,7 +3,16 @@
   "name": "Translate Buddy",
   "version": "1.0",
   "description": "Translate with context.",
-  "permissions": ["storage", "contextMenus", "activeTab"],
+  "permissions": [
+    "storage", 
+    "contextMenus", 
+    "activeTab", 
+    "background", 
+    "webRequest"
+  ],
+  "host_permissions": [
+    "*://*/*"
+  ],
   "background": {
     "service_worker": "background.js"
   },

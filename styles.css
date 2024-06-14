@@ -46,6 +46,8 @@
 .translate-results{
   margin: auto;
   width: fit-content;
+  display: flex;
+  flex-direction: column;
 }
 
 .translate-results ul{
@@ -211,3 +213,8 @@ opacity: 85%;
   background-color: #eef;
 }
 
+/* Stroke order*/
+.translate-stroke-order{
+  max-width: 256px;
+  max-height: 256px;
+}

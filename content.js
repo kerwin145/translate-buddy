@@ -10,8 +10,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       showTranslationPanel()
     else
       alert("Error fetching translate data")
-  } else if (message.action === "nodata"){
-    alert("Dictionary data is currently being loaded...")
+  }
+  else if (message.action = "loadImage"){
+    console.log(message.imageUrl)
+  } 
+  else if (message.action === "nodata"){
+    alert("Dictionary data is currently being loaded...please query again")
   }
 });
 
@@ -20,6 +24,8 @@ function sendQuery(text){
 }
 
 async function showTranslationPanel() {
+  console.log(tr_data.strokeImgUrl)
+
   if (translationPanel) 
     closeTranslationPanel();
 
@@ -45,11 +51,11 @@ async function showTranslationPanel() {
     let DOMresults = document.querySelector(".translate-results")
     let DOMheader = document.querySelector(".translate-selectedText")
 
-    
     if (tr_data.entries.length == 0){
+      DOMheader.innerHTML = trimText(tr_data.text)
       DOMresults.innerHTML = `<div class = "translate-noresults"> Not in my dictionary, sorry! :-( </div>`
-      makeCompoundListHTML(DOMresults, tr_data.compounds, `Compound words containing ${trimText(tr_data.text)}`, `No compound words using ${trimText(tr_data.text)} found!`)
-      makeCompoundListHTML(DOMresults, tr_data.subCompounds, `Compound words contained in ${trimText(tr_data.text)}`, `No compound words contained in ${trimText(tr_data.text)} found!`)
+      makeCompoundListHTML(DOMresults, tr_data.compounds, `Compound words (词组) containing ${trimText(tr_data.text)}`, `No compound words using ${trimText(tr_data.text)} found!`)
+      makeCompoundListHTML(DOMresults, tr_data.subCompounds, `Compound words (词组) contained in ${trimText(tr_data.text)}`, `No compound words contained in ${trimText(tr_data.text)} found!`)
       return
     }
 
@@ -76,9 +82,15 @@ async function showTranslationPanel() {
 
     DOMresults.insertAdjacentHTML("beforeend", `<h3>Definitions</h3>`)
     DOMresults.appendChild(DOMdefinitions)
-    makeCompoundListHTML(DOMresults, tr_data.compounds, `Compound words containing ${trimText(tr_data.text)}`, `No compound words using ${trimText(tr_data.text)} found!`)
+    makeCompoundListHTML(DOMresults, tr_data.compounds, `Compound words (词组) containing ${trimText(tr_data.text)}`, `No compound words using ${trimText(tr_data.text)} found!`)
     if(tr_data.text.length > 2)
-      makeCompoundListHTML(DOMresults, tr_data.subCompounds, `Compound words contained in ${trimText(tr_data.text)}`, `No compound words contained in ${trimText(tr_data.text)} found!`)
+      makeCompoundListHTML(DOMresults, tr_data.subCompounds, `Compound words (词组) contained in ${trimText(tr_data.text)}`, `No compound words contained in ${trimText(tr_data.text)} found!`)
+
+    //TODO Make stroke order retractable
+    const DOMstrokeOrder = document.createElement('img')
+    DOMstrokeOrder.src = tr_data.strokeImgUrl
+    DOMstrokeOrder.classList.add('translate-stroke-order')
+    DOMresults.appendChild(DOMstrokeOrder)
 
     if(tr_data.entries.length > 1){
       const DOMcontrol = document.createElement('div')
