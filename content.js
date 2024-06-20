@@ -1,21 +1,19 @@
 //TODO Store all of the dictionary data structures into background.JS and make methods that query backgruond js
-
 //store state for translation results
 let tr_data; //data format is defined in background.js
 let translationPanel = null;
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === "showTranslationPanel") {
-    if(tr_data = message.data)
-      showTranslationPanel()
-    else
-      alert("Error fetching translate data")
+    tr_data = message.data
+    showTranslationPanel()
   }
-  else if (message.action = "loadImage"){
-    console.log(message.imageUrl)
+  else if (message.action === "showLoadingPanel"){
+    tr_data = message.data
+    showTranslationPanel(true)
   } 
-  else if (message.action === "nodata"){
-    alert("Dictionary data is currently being loaded...please query again")
+  else{
+    alert("Some error :(")
   }
 });
 
@@ -23,9 +21,15 @@ function sendQuery(text){
   chrome.runtime.sendMessage({action: "translate", text})
 }
 
-async function showTranslationPanel() {
-  console.log(tr_data.strokeImgUrl)
-
+async function showTranslationPanel(loading = false) {
+  let html = 
+  `
+    <h2 class = "translate-selectedText">${tr_data.text || ""}</h2>
+    <div class="close-btn">&times;</div>
+    <div class="translate-results">
+      Loading data...
+    </div>
+  `
   if (translationPanel) 
     closeTranslationPanel();
 
@@ -35,14 +39,6 @@ async function showTranslationPanel() {
   document.body.appendChild(container)
 
   try {
-    let html = 
-    `
-      <h2 class = "translate-selectedText">${tr_data.text}</h2>
-      <div class="close-btn">&times;</div>
-      <div class="translate-results">
-        Loading...
-      </div>
-    `
     container.innerHTML = html
     document.addEventListener("mousedown", handleOutsideClick)
     container.querySelector(".close-btn").addEventListener("click", closeTranslationPanel);
@@ -50,6 +46,11 @@ async function showTranslationPanel() {
 
     let DOMresults = document.querySelector(".translate-results")
     let DOMheader = document.querySelector(".translate-selectedText")
+
+    if(loading){
+      DOMheader.innerHTML = trimText(tr_data.text)
+      return
+    }
 
     if (tr_data.entries.length == 0){
       DOMheader.innerHTML = trimText(tr_data.text)

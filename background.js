@@ -18,18 +18,32 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
   }
 });
 
-chrome.contextMenus.onClicked.addListener((info, tab) => {
+chrome.contextMenus.onClicked.addListener(async (info, tab) => {
   if (info.menuItemId === "translate" && info.selectionText) {
+    console.log(tab)
     handleTranslate(info.selectionText, tab.id)
   }
 });
 
-function handleTranslate(text, tabId){
-  if(!dictionaryData){
-    chrome.tabs.sendMessage(tabId, { action: "nodata"})
-  }
+async function handleTranslate(text, tabId){
+  if(!dictionaryData){  
+    chrome.tabs.sendMessage(tabId, { action: "showLoadingPanel", data: {text}});
+    fetch(chrome.runtime.getURL('cedict.json'))
+    .then(res => res.json())
+    .then(data => {
+      dictionaryData = data; 
+      buildIndexedDictionary(); 
+      buildInvertedIndex()
+      processTranslation(text, tabId)
+    })
+    .catch(err => console.error(err))
+  }else{
+    processTranslation(text, tabId)
+  }  
+}
 
-  let tr_data = {text: "", page: null, entries: [], compounds: [], subCompounds: [], strokeImgUrl: ""}
+function processTranslation(text, tabId){
+  tr_data = {text: "", page: null, entries: [], compounds: [], subCompounds: [], strokeImgUrl: ""}
   tr_data.text = text;
   tr_data.page = 0;
   tr_data.entries = sortEntries(dictionaryData.filter(x => x.simplified === text || x.traditional === text), true)
@@ -42,12 +56,6 @@ function handleTranslate(text, tabId){
     chrome.tabs.sendMessage(tabId, { action: "showTranslationPanel", data: tr_data });
   });
 }
-
-fetch(chrome.runtime.getURL('cedict.json'))
-  .then(res => res.json())
-  .then(data => {dictionaryData = data; buildIndexedDictionary(); buildInvertedIndex()})
-  .catch(err => console.error(err))
-
   //inverted index keeps track of phrases starting with a pair of words
 function buildInvertedIndex(){
   console.time('buildInvertedIndexTimer');
@@ -161,8 +169,9 @@ function sortEntries(entries, properNounPenealty = false){
   let { lowPriority, highPriority } = entries.reduce((acc, x) => {
     let count = 0
     for (let d of x.definitions){
+      d = d.toLowerCase()
       //differentiate old variant of and variant of
-      if (d.includes("surname") || d.includes("variant of") || d.includes("used in ") || d.includes("(archaic)"))
+      if (d.includes("surname") || d.includes("variant of") || d.includes("used in") || d.includes("(archaic)"))
         count++
     }
 
@@ -173,13 +182,18 @@ function sortEntries(entries, properNounPenealty = false){
     return acc;
   }, { lowPriority: [], highPriority: [] });
 
+  console.log(lowPriority)
+  console.log(highPriority)
   lowPriority = lowPriority.map( x => {
+    //high values go last
     if (x.definitions.some(d => d.toLowerCase().includes("used in")))
       return {defs: x, val: 1}
     if (x.definitions.some(d => d.toLowerCase().includes("surname")))
       return {defs: x, val: 2}
     if (x.definitions.some(d => d.toLowerCase().includes("variant of")))
       return {defs: x, val: 3}
+    if (x.definitions.some(d => d.toLowerCase().includes("(archaic)")))
+      return {defs: x, val: 4}
     else return {defs: x,  val: 99}
   }).sort((a,b) => a.val - b.val).map(x => x.defs)
 
