@@ -205,7 +205,10 @@ function sortEntries(entries, properNounPenealty = false){
     if (a.HSK_conf == 1 && b.HSK_conf == 0) return -1
     if (a.HSK_conf == 0 && b.HSK_conf == 1) return 1
 
-    return b.word_rank - a.word_rank
+    if(b.word_score_ex !== a.word_score_ex)
+      return b.word_score_ex - a.word_score_ex
+    
+    return b.word_score_in - a.word_score_in
   });
 
   return highPriority.concat(lowPriority);

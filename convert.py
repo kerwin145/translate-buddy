@@ -89,10 +89,11 @@ def parse_cedict_line(line):
         'definitions': [d for d in definitions if d],
         'HSK_level': None,
         'HSK_conf': None,
-        'word_rank': 0 #kinda like page rank but not really
+        'word_score_in': 0, #kinda like page rank but not really, low bad high good
+        'word_score_ex': 0 
     }
 
-## merging hsk data
+## Prepping hsk data
 HSK_LEVELS = 6
 words_pinyin_levels = [set() for _ in range(HSK_LEVELS)]
 words_levels = [set() for _ in range(HSK_LEVELS)]
@@ -107,13 +108,13 @@ for idx in range(HSK_LEVELS):
 
 entries = []
 
+cedict_file = open('data/cedict_ts.u8', 'r', encoding='utf-8')
 # Parse cedict file and put into JSON database
-with open('data/cedict_ts.u8', 'r', encoding='utf-8') as f:
-    for line in f:
-        if line.startswith('#') or not line.strip():
-            continue
-        entry = parse_cedict_line(line)
-        entries.append(entry)
+for line in cedict_file:
+    if line.startswith('#') or not line.strip():
+        continue
+    entry = parse_cedict_line(line)
+    entries.append(entry)
 
 # Merge HSK info with cedict file
 # First pass will require word and pinyin to match. Second pass only checks pinyin
@@ -132,15 +133,28 @@ for entry in entries:
             entry['HSK_conf'] = 0
             found[i] += 1
             break
+# add word frequency score
+word_count_external = {}
+with open('data/Char_Freq.txt', 'r', encoding='utf-8-sig') as f:
+    for line in f:
+        line = line.strip()
+        if line.startswith('/*'):
+            continue
+        tokens = line.split()
+        word_count_external[tokens[1]] = int(int(tokens[2]) ** .5) * 2
 
-# update work rank
+# update word score
 for entry in entries:
     score = 0
+    score_ex = 0
     for char in entry['simplified']:
         if isValidChar(char):
             score += 1/word_count[char]
+            score_ex += 1/word_count_external.get(char, 1)
     if score > 0:
-        entry['word_rank'] = (1/score * 10000) // 100
+        entry['word_score_in'] = (1/score * 10000) // 100
+        entry['word_score_ex'] = (1/score_ex * 10000) // 100
+
 
 print("FOUND:", found)
 # Write JSON data to file
@@ -149,5 +163,3 @@ if os.path.exists('cedict.json'):
 
 with open('cedict.json', 'w', encoding='utf-8') as f:
     json.dump(entries, f, ensure_ascii=False, indent=2)
-
-## TODO: Make a reverse index

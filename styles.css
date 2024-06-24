@@ -1,3 +1,14 @@
+/* Global styles */
+.tr-active{
+  font-weight: bold;
+}
+
+tr-hide{
+  display: none;
+}
+
+/* ------- */
+
 #translation-panel{
   position: fixed;
   top: 20px;
@@ -10,8 +21,9 @@
   min-width: min(300px, 20vw);
   width: min-content;
   max-width: 30vw;
+  outline:none;
+  font-family: Arial, sans-serif;
 }
-
 
 #translation-panel h3{
   font-size: large;
@@ -76,6 +88,7 @@
   margin-bottom: 1rem;
   max-height: 20vh;
   overflow: auto;
+  padding-bottom: 1px;
 }
 
 #translation-panel ul li{
@@ -206,10 +219,15 @@ opacity: 85%;
 }
 
 .translate-comp span.translate-propernoun{
-  border: 1px dashed royalblue;
+  border: 1px dashed  royalblue;
   background: aliceblue;
   color: navy;
 }
+
+.translate-comp span.compound-isHSK{
+  border-color: indigo;
+}
+
 
 .translate-comp span:hover{
   background-color: #eef;
