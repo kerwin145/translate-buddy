@@ -1,3 +1,5 @@
+#TODO: 不 when followed by a word w/ a 4th tone will take 2nd tone instead, except for proper nouns
+
 import os
 import json
 import re

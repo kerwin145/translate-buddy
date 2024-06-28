@@ -1,4 +1,3 @@
-//TODO Store all of the dictionary data structures into background.JS and make methods that query backgruond js
 //store state for translation results
 let tr_data; //data format is defined in background.js
 let translationPanel = null;
@@ -12,6 +11,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     tr_data = message.data
     showTranslationPanel(true)
   } 
+  else if (message.action === "loadSentences"){
+    console.log(message.data)
+    let $html = $(message.data); // Use $ after jQuery is loaded
+    const table = $html.find('.table').text();
+    console.log(table)
+  }
   else{
     alert("Some error :(")
   }
@@ -86,13 +91,15 @@ function showTranslationPanel(loading = false) {
   if(tr_data.text.length > 2)
     makeCompoundListHTML(DOMresults, tr_data.subCompounds, `Compound words (词组) contained in ${trimText(tr_data.text)}`, `No compound words contained in ${trimText(tr_data.text)} found!`)
 
-
-
   const DOMstrokeOrder = document.createElement('img')
   DOMstrokeOrder.src = tr_data.strokeImgUrl
   DOMstrokeOrder.classList.add('translate-stroke-order')
-  DOMresults.appendChild(DOMstrokeOrder)
 
+  const DOMsentences = document.createElement('div')
+  DOMsentences.innerHTML = "Sentences loading..."
+  DOMsentences.classList.add('translate-sentences')
+
+  makeExploreBar(DOMresults, [DOMstrokeOrder, DOMsentences], ["Stoke order", "Sentences"])
 
   if(tr_data.entries.length > 1)
     makeNavChip(DOMdefinitions)
@@ -126,7 +133,6 @@ function isProperNoun(pinyin){
 }
 
 /* Explore bar */
-let activeExploreTab = 0
 /** 
  * @param children is a list of DOM references
  * @param titles is a list of title for each children element
@@ -160,6 +166,8 @@ function makeExploreBar(parent, children, titles){
     DOMcontrol.addEventListener("click", () => {
       DOMexploreControls.childNodes.forEach(btn => {btn.classList.remove('tr-active')})
       DOMcontrol.classList.add('tr-active')
+      children.forEach(c => {c.classList.add('tr-hide')})
+      el.classList.remove('tr-hide')
       // DOMexplorePanel.removeChild(DOMexplorePanel.firstChild)
       // DOMexplorePanel.appendChild(el)
     })

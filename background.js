@@ -1,5 +1,5 @@
 //initializing this here to show structure. Who needs object oriented programming?
-let tr_data = {text: "", page: null, entries: [], compounds: [], subCompounds: [], strokeImgUrl: ""}
+tr_data = {text: "", page: null, entries: [], compounds: [], subCompounds: [], strokeImgUrl: "", sentencesUrl: ""}
 const invertedIndex = new Map()
 let dictionaryData = null;
 let dictionaryDataIndexed = new Map() //allows O(1) retrieval where the key is the simplified word. The value is a list of entries with that key (as a single word can have multiple entries)
@@ -18,14 +18,14 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
   }
 });
 
-chrome.contextMenus.onClicked.addListener(async (info, tab) => {
+chrome.contextMenus.onClicked.addListener((info, tab) => {
   if (info.menuItemId === "translate" && info.selectionText) {
     console.log(tab)
     handleTranslate(info.selectionText, tab.id)
   }
 });
 
-async function handleTranslate(text, tabId){
+function handleTranslate(text, tabId){
   if(!dictionaryData){  
     chrome.tabs.sendMessage(tabId, { action: "showLoadingPanel", data: {text}});
     fetch(chrome.runtime.getURL('cedict.json'))
@@ -38,17 +38,29 @@ async function handleTranslate(text, tabId){
     })
     .catch(err => console.error(err))
   }else{
-    processTranslation(text, tabId)
+     processTranslation(text, tabId)
   }  
 }
 
 function processTranslation(text, tabId){
-  tr_data = {text: "", page: null, entries: [], compounds: [], subCompounds: [], strokeImgUrl: ""}
+  tr_data = {text: "", page: null, entries: [], compounds: [], subCompounds: [], strokeImgUrl: "", sentencesUrl: ""}
   tr_data.text = text;
   tr_data.page = 0;
   tr_data.entries = sortEntries(dictionaryData.filter(x => x.simplified === text || x.traditional === text), true)
   tr_data.compounds = sortEntries(searchAdjWords(text))
   tr_data.subCompounds = searchSubCompounds(text) 
+
+  //TEST
+  tr_data.sentencesUrl = "https://www.purpleculture.net/sample_sentences/?word=%E4%BD%A0%E5%A5%BD"
+  fetch(tr_data.sentencesUrl) //asynchronous
+  .then(res => res.text())
+  .then(html => {
+    chrome.tabs.sendMessage(tabId, { action: "loadSentences", data: html });
+  })
+  .catch(err => {
+    console.error('Error fetching sentences:', err);
+  });
+
   if(text.length === 1)
     tr_data.strokeImgUrl = `https://www.strokeorder.com/assets/bishun/guide/${text.charCodeAt(0)}.png`
   
@@ -56,6 +68,7 @@ function processTranslation(text, tabId){
     chrome.tabs.sendMessage(tabId, { action: "showTranslationPanel", data: tr_data });
   });
 }
+
   //inverted index keeps track of phrases starting with a pair of words
 function buildInvertedIndex(){
   console.time('buildInvertedIndexTimer');

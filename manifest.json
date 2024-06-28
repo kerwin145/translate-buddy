@@ -7,8 +7,7 @@
     "storage", 
     "contextMenus", 
     "activeTab", 
-    "background", 
-    "webRequest"
+    "background"
   ],
   "host_permissions": [
     "<all_urls>"
