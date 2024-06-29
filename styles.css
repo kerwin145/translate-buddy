@@ -7,6 +7,10 @@
   display: none;
 }
 
+#translation-panel ul{
+  padding: 3px;
+}
+
 /* ------- */
 
 #translation-panel{
@@ -18,7 +22,7 @@
   background-color: rgb(240, 248, 255);
   border-radius: 10px;
   z-index: 9999;
-  min-width: min(300px, 20vw);
+  min-width: max(300px, 20vw);
   width: min-content;
   max-width: 30vw;
   outline:none;
@@ -225,16 +229,117 @@ opacity: 85%;
 }
 
 .translate-comp span.compound-isHSK{
-  border-color: indigo;
+  border-radius: 12px;
+  border-color: mediumpurple;
 }
 
 
 .translate-comp span:hover{
   background-color: #eef;
 }
+/* Explore bar */
+.translation-explore{
+  width: max-content;
+  max-width: 20vw;
+}
+
+.translation-explore-controls{
+  display: flex;
+  gap: 6px;
+  border-bottom: 1px solid silver;
+  margin-bottom: 8px;
+}
+
+.translation-explore-controls button{
+  background-color: transparent;
+  border: none;
+  background-image: none;
+  margin-bottom: 2px; 
+  outline: none;
+  color: indigo;
+}
+
+.translation-explore-controls button:nth-child(2){
+  padding-left: 6px;
+  border-left: 1px solid silver;
+  margin: 4px 0;
+  line-height: 0;
+}
 
 /* Stroke order*/
 .translate-stroke-order{
   max-width: 256px;
   max-height: 256px;
+}
+
+/* Example sentences */
+.translate-sentences table, .translate-sentences tr, .translate-sentences td{
+  border: none;
+}
+
+.translate-sentences table{
+  margin-top: 6px;
+  margin-bottom: 12px;
+  text-wrap: pretty;
+}
+
+.translate-sentences table > tr > td{
+  text-align: center;
+  margin-right: 4px;
+  display: inline-block;
+}
+
+.translate-sentences tr{
+  line-height: 1;
+}
+
+.translate-sentences .sentences-pinyin{
+  font-size: smaller;
+}
+
+.translate-sentences .sentences-english-tr{
+  font-size: small;
+}
+
+.translate-sentences .sentences-english-tr td{
+  text-align: start;
+  margin-left: 1rem;
+}
+
+.translate-sentences .sentences-words{
+  font-size: large;
+}
+
+.translate-sentences .sentences-pinyin.tr-hide + tr td{
+  margin: 0;
+} 
+
+.translate-sentences .sentences-more{
+  font-size: smaller;
+  color: indigo;
+}
+
+.translate-sentences .sentences-attribution{
+  font-size: small;
+  color: silver;
+}
+
+.sentences-control{
+  display: flex;
+  justify-content: space-between;
+}
+
+.sentences-control > div{
+  display: flex;
+  gap: 4px
+}
+.sentences-control label{
+  font-size: small;
+}
+
+.translate-sentences input{
+  margin-bottom: 8px;
+}
+.sentences-no-results{
+  color: rgba(0,0,0,.35);
 }

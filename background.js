@@ -1,5 +1,5 @@
 //initializing this here to show structure. Who needs object oriented programming?
-tr_data = {text: "", page: null, entries: [], compounds: [], subCompounds: [], strokeImgUrl: "", sentencesUrl: ""}
+tr_data = {text: "", page: null, entries: [], compounds: [], subCompounds: [], strokeImgUrl: ""}
 const invertedIndex = new Map()
 let dictionaryData = null;
 let dictionaryDataIndexed = new Map() //allows O(1) retrieval where the key is the simplified word. The value is a list of entries with that key (as a single word can have multiple entries)
@@ -43,7 +43,7 @@ function handleTranslate(text, tabId){
 }
 
 function processTranslation(text, tabId){
-  tr_data = {text: "", page: null, entries: [], compounds: [], subCompounds: [], strokeImgUrl: "", sentencesUrl: ""}
+  tr_data = {text: "", page: null, entries: [], compounds: [], subCompounds: [], strokeImgUrl: ""}
   tr_data.text = text;
   tr_data.page = 0;
   tr_data.entries = sortEntries(dictionaryData.filter(x => x.simplified === text || x.traditional === text), true)
@@ -51,11 +51,12 @@ function processTranslation(text, tabId){
   tr_data.subCompounds = searchSubCompounds(text) 
 
   //TEST
-  tr_data.sentencesUrl = "https://www.purpleculture.net/sample_sentences/?word=%E4%BD%A0%E5%A5%BD"
-  fetch(tr_data.sentencesUrl) //asynchronous
+  //asynchronous
+  const queryUrl = `https://www.purpleculture.net/sample_sentences/?word=${text}`
+  fetch(queryUrl) 
   .then(res => res.text())
   .then(html => {
-    chrome.tabs.sendMessage(tabId, { action: "loadSentences", data: html });
+    chrome.tabs.sendMessage(tabId, { action: "loadSentences", data: {html, queryUrl}});
   })
   .catch(err => {
     console.error('Error fetching sentences:', err);
