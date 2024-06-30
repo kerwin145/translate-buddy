@@ -1,5 +1,5 @@
 //initializing this here to show structure. Who needs object oriented programming?
-tr_data = {text: "", page: null, entries: [], compounds: [], subCompounds: [], strokeImgUrl: ""}
+tr_data = {text: "", HSK_levels: null, page: null, entries: [], compounds: [], subCompounds: [], strokeImgUrl: "", sentenceData: null, sentenceQuery: null}
 const invertedIndex = new Map()
 let dictionaryData = null;
 let dictionaryDataIndexed = new Map() //allows O(1) retrieval where the key is the simplified word. The value is a list of entries with that key (as a single word can have multiple entries)
@@ -43,20 +43,30 @@ function handleTranslate(text, tabId){
 }
 
 function processTranslation(text, tabId){
-  tr_data = {text: "", page: null, entries: [], compounds: [], subCompounds: [], strokeImgUrl: ""}
+  text = text.replace(/\s/g, "")
+  const queryUrl = `https://www.purpleculture.net/sample_sentences/?word=${text}`
+  let targetEntries = dictionaryData.filter(x => x.simplified === text || x.traditional === text)
+  console.log(targetEntries)
+
+  tr_data = {text: "", HSK_levels: null, page: null, entries: [], compounds: [], subCompounds: [], strokeImgUrl: "", sentenceData: null, sentenceQuery: queryUrl}
   tr_data.text = text;
   tr_data.page = 0;
-  tr_data.entries = sortEntries(dictionaryData.filter(x => x.simplified === text || x.traditional === text), true)
+  tr_data.entries = sortEntries(targetEntries, true)
   tr_data.compounds = sortEntries(searchAdjWords(text))
   tr_data.subCompounds = searchSubCompounds(text) 
 
-  //TEST
+  let levels = []
+  targetEntries.forEach(entry => {
+    if(entry.HSK_level != null && !levels.some(x => x === entry.HSK_level)) levels.push(entry.HSK_level)
+  });
+  levels = levels.sort((a,b) => a-b)
+  tr_data.HSK_levels = levels.join(", ")
+
   //asynchronous
-  const queryUrl = `https://www.purpleculture.net/sample_sentences/?word=${text}`
   fetch(queryUrl) 
   .then(res => res.text())
   .then(html => {
-    chrome.tabs.sendMessage(tabId, { action: "loadSentences", data: {html, queryUrl}});
+    chrome.tabs.sendMessage(tabId, { action: "loadSentences", data: html});
   })
   .catch(err => {
     console.error('Error fetching sentences:', err);
@@ -196,8 +206,6 @@ function sortEntries(entries, properNounPenealty = false){
     return acc;
   }, { lowPriority: [], highPriority: [] });
 
-  console.log(lowPriority)
-  console.log(highPriority)
   lowPriority = lowPriority.map( x => {
     //high values go last
     if (x.definitions.some(d => d.toLowerCase().includes("used in")))

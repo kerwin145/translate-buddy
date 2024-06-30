@@ -5,9 +5,7 @@ Unzip, and run convert.py
 
 # Todo
 ### Phase 1: Basic functionality
-- To further improve sorting order of a word, if a word has different pinyin, we can rank it by searching all compounds containing the word and summing by the occurence of the pin yins. More occurences means better rank (more likely that the pronounciation is fitting)
-- Display example sentences (from tatoeba, look for an API)
-- Display HSK level for words that are in the HSK word list
+- (Deprioritized) To further improve sorting order of a word, if a word has different pinyin, we can rank it by searching all compounds containing the word and summing by the occurence of the pin yins. More occurences means better rank (more likely that the pronounciation is fitting)
 - Allow saving of a word to local storage, along with all its contents, saving stroke order img and example sentences as well
     - Thus turns local storage into a cache for resources that would need web requests (I don't think stale cache is an issue here)
     - Will this cache have to be limited to prevent using too much storage? Probably not
