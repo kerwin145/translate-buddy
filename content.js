@@ -13,9 +13,14 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     showTranslationPanel(true)
   } 
   else if (message.action === "loadSentences"){
-    let $html = $(message.data);
-    const table = $html.find('.table').text();
-    tr_data.sentenceData = processSentenceData(table)
+    if(message.isCached){
+      tr_data.sentenceData = processSentenceData(message.data)
+    }else{
+      let $html = $(message.data);
+      const table = $html.find('.table').text();
+      tr_data.sentenceData = processSentenceData(table)
+      chrome.runtime.sendMessage({action: "setCache", data: {key: tr_data.text, value: table}}) //we store table rather than the processed data b/c table is smaller, and processing won't take too long
+    }
     processSentences(tr_data.sentenceData, tr_data.sentenceQuery)
   }
   else{
@@ -60,8 +65,8 @@ function showTranslationPanel(loading = false) {
   if (tr_data.entries.length == 0){
     DOMheader.innerHTML = trimText(tr_data.text)
     DOMresults.innerHTML = `<div class = "translate-noresults"> Not in my dictionary, sorry! :-( </div>`
-    makeCompoundListHTML(DOMresults, tr_data.compounds, `Compounds containing ${trimText(tr_data.text)}`, `No compound words using ${trimText(tr_data.text)} found!`)
-    makeCompoundListHTML(DOMresults, tr_data.subCompounds, `Compounds contained in ${trimText(tr_data.text)}`, `No compound words contained in ${trimText(tr_data.text)} found!`)
+    makeCompoundListHTML(DOMresults, tr_data.compounds, `Compounds using ${trimText(tr_data.text)}`, `No compound words using ${trimText(tr_data.text)} found!`)
+    makeCompoundListHTML(DOMresults, tr_data.subCompounds, `Compounds used in ${trimText(tr_data.text)}`, `No compound words used in ${trimText(tr_data.text)} found!`)
     return
   }
 
@@ -72,8 +77,6 @@ function showTranslationPanel(loading = false) {
   DOMresults.innerHTML = ""
 
   let {simplified, traditional, pinyin, definitions} = tr_data.entries[tr_data.page]
-
-  console.log(tr_data.HSK_levels)
 
   DOMheader.innerHTML = `
     <span>${pinyin}</span>
@@ -98,9 +101,9 @@ function showTranslationPanel(loading = false) {
   if(tr_data.entries.length > 1)
     makeNavChip(DOMresults)
 
-  makeCompoundListHTML(DOMresults, tr_data.compounds, `Compounds containing ${trimText(tr_data.text)}`, `No compound words using ${trimText(tr_data.text)} found!`)
+  makeCompoundListHTML(DOMresults, tr_data.compounds, `Compounds using ${trimText(tr_data.text)}`, `No compound words using ${trimText(tr_data.text)} found!`)
   if(tr_data.text.length > 2)
-    makeCompoundListHTML(DOMresults, tr_data.subCompounds, `Compounds contained in ${trimText(tr_data.text)}`, `No compound words contained in ${trimText(tr_data.text)} found!`)
+    makeCompoundListHTML(DOMresults, tr_data.subCompounds, `Compounds used in ${trimText(tr_data.text)}`, `No compound words used in ${trimText(tr_data.text)} found!`)
 
   const DOMstrokeOrder = document.createElement('img')
   DOMstrokeOrder.src = tr_data.strokeImgUrl
@@ -222,9 +225,11 @@ function makeNavChip(parent){
     if (e.code === "ArrowRight" && tr_data.page < tr_data.entries.length - 1) {
         tr_data.page++;
         showTranslationPanel();
+        processSentences(tr_data.sentenceData, tr_data.sentenceQuery)
     } else if (e.code === "ArrowLeft" && tr_data.page > 0) {
         tr_data.page--;
         showTranslationPanel();
+        processSentences(tr_data.sentenceData, tr_data.sentenceQuery)
     }
   });
   translationPanel.setAttribute('tabindex', 0);
@@ -395,9 +400,9 @@ async function processSentences(data, queryUrl){
         $top.text(entry.pinyin)
 
       const $bottom = $('<div></div>').addClass('sentences-words').text(entry.word)
-      console.log(`i: ${i}, i == words length-1? ${i === p.words.length-1}, word: ${entry.word}, regex match? ${/[\p{P}\p{S}]/u.test(entry.word)}`)
-      if(i === p.words.length-1 && /[\p{P}\p{S}]/u.test(entry.word)){
-        console.log("ZERO WIDTH")
+      // console.log(`i: ${i}, i == words length-1? ${i === p.words.length-1}, word: ${entry.word}, regex match? ${/[\p{P}\p{S}]/u.test(entry.word)}`)
+      if(i === p.words.length-1 && entry.word.length === 1 && /[\p{P}\p{S}]/u.test(entry.word)){
+        // console.log("ZERO WIDTH")
         $bottom.addClass('zero-width') //if last char is puncutation, make it zero width to stop wrapping behavior
       }
 
@@ -407,10 +412,11 @@ async function processSentences(data, queryUrl){
 
     const $english = $('<div></div>').addClass('sentences-english-tr').text(p.english)
 
-    if(sentencesOnlyWords) 
+    if(sentencesOnlyWords) {
       $('.sentences-pinyin').addClass('tr-hide');
-    if(sentencesOnlyWords)
       $('.sentences-english-tr').addClass('tr-hide');
+    }
+
     $sentenceBlock.append($wordsAndPinyin)
     $sentenceBlock.append($english)
 

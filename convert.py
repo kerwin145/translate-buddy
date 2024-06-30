@@ -70,8 +70,8 @@ def parse_cedict_line(line):
     #I love regex ;-;
     pattern_sth = r"(?<!\w)sth(?!\w)" #replace sth with something if not in a word
     pattern_sb  = r"(?<!\w)sb(?!\w)" #same as above but with sb and somebody
-    pattern_pinyin_group = r"\[((?:[a-zA-Z:·]+\d\s?)+)\]"  # look for stuff like [Huang2Shi2gong1 San1 lu:e4] 
-    pattern_pinyin_single = r"(?:[a-zA-Z:·]+\d)" # allow splittng of above into individual words
+    pattern_pinyin_group = r"\[((?:[a-zA-Z:·\-]+\d\s?)+)\]"  # look for stuff like [Huang2Shi2gong1 San1 lu:e4] 
+    pattern_pinyin_single = r"(?:[a-zA-Z:·\-]+\d)" # allow splittng of above into individual words
     for i in range(len(definitions)):
         pinyin_group = re.findall(pattern_pinyin_group, definitions[i])
         if len(pinyin_group) > 0:

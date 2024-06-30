@@ -4,12 +4,7 @@ To set up, you will have to download the chinese english dictionary from https:/
 Unzip, and run convert.py
 
 # Todo
-### Phase 1: Basic functionality
-- (Deprioritized) To further improve sorting order of a word, if a word has different pinyin, we can rank it by searching all compounds containing the word and summing by the occurence of the pin yins. More occurences means better rank (more likely that the pronounciation is fitting)
-- Allow saving of a word to local storage, along with all its contents, saving stroke order img and example sentences as well
-    - Thus turns local storage into a cache for resources that would need web requests (I don't think stale cache is an issue here)
-    - Will this cache have to be limited to prevent using too much storage? Probably not
-___
+
 The stuff below here are QoL future features that would differentiate this app from the common translating website
 ### Phase 2: Personalized app, using local storage
 - Personal word bank: User can add word to their word bank
@@ -41,9 +36,15 @@ The stuff below here are QoL future features that would differentiate this app f
 - Tagging (idk if I want to implement, as the feature is kind of bloating)
     - Users can tag words, so they can be grouped
     - Allows for flash card quiz generation on a group of tagged words
+##### Others
+- (Deprioritized) To further improve sorting order of a word, if a word has different pinyin, we can rank it by searching all compounds containing the word and summing by the occurence of the pin yins. More occurences means better rank (more likely that the pronounciation is fitting)
 
 ### Future direction
 Phase 2 and 3, and parts of Phase 1 (excluding HSK stuff) can be generalized. Ideally, this code could be easily remodified to support another dictionary for a different langauge.
 
 # Remarks
-Big thanks to https://github.com/glxxyz/hskhsk.com/tree/main/website/public for the 2012 HSK word list data, allowing translation entries to be assigned with their HSK levels
+Big thanks to 
+- https://github.com/glxxyz/hskhsk.com/tree/main/website/public for the 2012 HSK word list data, allowing translation entries to be assigned with their HSK levels
+- https://www.purpleculture.net/ for example sentence data
+- https://www.strokeorder.com/chinese/ for stroke order diagrams
+

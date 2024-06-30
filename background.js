@@ -1,5 +1,5 @@
 //initializing this here to show structure. Who needs object oriented programming?
-tr_data = {text: "", HSK_levels: null, page: null, entries: [], compounds: [], subCompounds: [], strokeImgUrl: "", sentenceData: null, sentenceQuery: null}
+tr_data = {text: "", HSK_levels: null, page: null, entries: [], compounds: [], subCompounds: [], strokeImgUrl: "", useImgCache: false, sentenceData: null, sentenceQuery: null}
 const invertedIndex = new Map()
 let dictionaryData = null;
 let dictionaryDataIndexed = new Map() //allows O(1) retrieval where the key is the simplified word. The value is a list of entries with that key (as a single word can have multiple entries)
@@ -15,6 +15,9 @@ chrome.runtime.onInstalled.addListener(() => {
 chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
   if (request.action === "translate") {
     handleTranslate(request.text, sender.tab.id)
+  } 
+  else if(request.action === "setCache"){
+    updateCache(request.data.key, request.data.value)
   }
 });
 
@@ -25,35 +28,31 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
   }
 });
 
-function handleTranslate(text, tabId){
+async function handleTranslate(text, tabId){
   if(!dictionaryData){  
     chrome.tabs.sendMessage(tabId, { action: "showLoadingPanel", data: {text}});
-    fetch(chrome.runtime.getURL('cedict.json'))
-    .then(res => res.json())
-    .then(data => {
-      dictionaryData = data; 
-      buildIndexedDictionary(); 
-      buildInvertedIndex()
-      processTranslation(text, tabId)
-    })
-    .catch(err => console.error(err))
-  }else{
-     processTranslation(text, tabId)
-  }  
+    const res = await fetch(chrome.runtime.getURL('cedict.json'))
+    const data = await res.json()
+    dictionaryData = data; 
+    buildIndexedDictionary(); 
+    buildInvertedIndex()
+  }
+  await processTranslation(text, tabId) 
 }
 
-function processTranslation(text, tabId){
+async function processTranslation(text, tabId){
   text = text.replace(/\s/g, "")
-  const queryUrl = `https://www.purpleculture.net/sample_sentences/?word=${text}`
+  const sentenceQuery = `https://www.purpleculture.net/sample_sentences/?word=${text}`
   let targetEntries = dictionaryData.filter(x => x.simplified === text || x.traditional === text)
   console.log(targetEntries)
 
-  tr_data = {text: "", HSK_levels: null, page: null, entries: [], compounds: [], subCompounds: [], strokeImgUrl: "", sentenceData: null, sentenceQuery: queryUrl}
+  tr_data = {text: "", HSK_levels: null, page: null, entries: [], compounds: [], subCompounds: [], strokeImgUrl: "", sentenceData: null, sentenceQuery}
   tr_data.text = text;
   tr_data.page = 0;
   tr_data.entries = sortEntries(targetEntries, true)
   tr_data.compounds = sortEntries(searchAdjWords(text))
   tr_data.subCompounds = searchSubCompounds(text) 
+  tr_data.strokeImgUrl = `https://www.strokeorder.com/assets/bishun/guide/${text.charCodeAt(0)}.png`
 
   let levels = []
   targetEntries.forEach(entry => {
@@ -62,22 +61,24 @@ function processTranslation(text, tabId){
   levels = levels.sort((a,b) => a-b)
   tr_data.HSK_levels = levels.join(", ")
 
-  //asynchronous
-  fetch(queryUrl) 
-  .then(res => res.text())
-  .then(html => {
-    chrome.tabs.sendMessage(tabId, { action: "loadSentences", data: html});
-  })
-  .catch(err => {
-    console.error('Error fetching sentences:', err);
-  });
-
   if(text.length === 1)
     tr_data.strokeImgUrl = `https://www.strokeorder.com/assets/bishun/guide/${text.charCodeAt(0)}.png`
+
+  chrome.tabs.sendMessage(tabId, { action: "showTranslationPanel", data: tr_data });
   
-  chrome.storage.local.set({ text }, () => {
-    chrome.tabs.sendMessage(tabId, { action: "showTranslationPanel", data: tr_data });
-  });
+  try{
+    //get sentences
+    let data = await queryCache(text)
+    if(data){
+      console.log("Hit sentence cache :o")
+      chrome.tabs.sendMessage(tabId, { action: "loadSentences", data, isCached: true });
+    }else{
+      console.log("Missed sentence cache :(")
+      let sentenceData = await fetch(sentenceQuery)
+      let html = await sentenceData.text()
+      chrome.tabs.sendMessage(tabId, { action: "loadSentences", data: html, isCached: false});
+    }
+  } catch (e) {console.log(e)}
 }
 
   //inverted index keeps track of phrases starting with a pair of words
@@ -234,4 +235,47 @@ function sortEntries(entries, properNounPenealty = false){
   });
 
   return highPriority.concat(lowPriority);
+}
+
+//Handle cache
+const MAX_CACHE_SIZE = 1000;
+async function getCache() {
+  const result = await chrome.storage.local.get('cache')
+  return result.cache ? JSON.parse(result.cache) : {}
+}
+
+async function setCache(cache) {
+  await chrome.storage.local.set({ cache: JSON.stringify(cache) })
+  console.log(await chrome.storage.local.getBytesInUse())
+}
+
+async function updateCache(key, value) {
+  let cache = await getCache();
+  if (Object.keys(cache).length >= MAX_CACHE_SIZE) {
+      let oldestKey = null
+      let oldestTimestamp = Infinity
+      for (const [k, v] of Object.entries(cache)) {
+          if (v.timestamp < oldestTimestamp) {
+              oldestTimestamp = v.timestamp
+              oldestKey = k
+          }
+      }
+      if (oldestKey) 
+        delete cache[oldestKey]
+    }
+
+  console.log(cache)
+  cache[key] = { data: value, timestamp: Date.now() }
+  await setCache(cache)
+}
+
+async function queryCache(key) {
+  let cache = await getCache()
+  if (cache[key]) {
+      // Update timestamp
+      cache[key].timestamp = Date.now()
+      await setCache(cache)
+      return cache[key].data
+  }
+  return null
 }
