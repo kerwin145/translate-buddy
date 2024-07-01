@@ -72,7 +72,7 @@
 
 .translate-results{
   margin: auto;
-  width: fit-content;
+  width: 100%;
   display: flex;
   flex-direction: column;
 }

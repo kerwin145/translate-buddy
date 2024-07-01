@@ -363,7 +363,7 @@ async function processSentences(data, queryUrl){
   $attribution.append(textBeforeLink).append($link);
 
   if(data.length == 0){
-    const $noResults = $('<p></p>').addClass('sentences-no-results').text(`Wow, that's rare. No sentences have been found for ${tr_data.text}`)
+    const $noResults = $('<p></p>').addClass('sentences-no-results').text(`Wow, that's rare. No sentences have been found for ${tr_data.text}. Maybe try again?`)
     $(DOMsentences).append($noResults)
     $(DOMsentences).append($attribution)
     return
@@ -400,22 +400,19 @@ async function processSentences(data, queryUrl){
         $top.text(entry.pinyin)
 
       const $bottom = $('<div></div>').addClass('sentences-words').text(entry.word)
-      // console.log(`i: ${i}, i == words length-1? ${i === p.words.length-1}, word: ${entry.word}, regex match? ${/[\p{P}\p{S}]/u.test(entry.word)}`)
-      if(i === p.words.length-1 && entry.word.length === 1 && /[\p{P}\p{S}]/u.test(entry.word)){
-        // console.log("ZERO WIDTH")
+      if(i === p.words.length-1 && entry.word.length === 1 && /[\p{P}\p{S}]/u.test(entry.word))
         $bottom.addClass('zero-width') //if last char is puncutation, make it zero width to stop wrapping behavior
-      }
+
+      if(sentencesOnlyWords) 
+        $top.addClass('tr-hide');
 
       $single.append($top).append($bottom)
       $wordsAndPinyin.append($single)
     }
 
     const $english = $('<div></div>').addClass('sentences-english-tr').text(p.english)
-
-    if(sentencesOnlyWords) {
-      $('.sentences-pinyin').addClass('tr-hide');
-      $('.sentences-english-tr').addClass('tr-hide');
-    }
+    if(sentencesOnlyWords) 
+      $english.addClass('tr-hide');
 
     $sentenceBlock.append($wordsAndPinyin)
     $sentenceBlock.append($english)
@@ -434,7 +431,10 @@ async function processSentences(data, queryUrl){
     id: 'toggle-only-words',
     name: 'Show only words'
   });
-  if(sentencesOnlyWords) $toggleOnlyWords.prop('checked', true);
+  
+  if(sentencesOnlyWords) 
+    $toggleOnlyWords.prop('checked', true)
+
   $toggleOnlyWords.on('click', function(){
     if ($(this).is(':checked')) {
       sentencesOnlyWords = true;
@@ -459,9 +459,9 @@ async function processSentences(data, queryUrl){
   $(DOMsentences).append($attribution)
 }
 
-function waitForElement(selector, timeout = 3500) {
+function waitForElement(selector, timeout = 4000) {
   return new Promise((resolve, reject) => {
-    const intervalTime = 100; // Interval time in milliseconds
+    const intervalTime = 120; // Interval time in milliseconds
     let elapsedTime = 0;
 
     const interval = setInterval(() => {
