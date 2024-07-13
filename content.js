@@ -2,6 +2,7 @@
 let tr_data; //data format is defined in background.js
 let translationPanel = null;
 let sentencesOnlyWords = false; //variable to toggle for showing only words in sentences tab
+let windowSize = 0;
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === "showTranslationPanel") {
@@ -36,7 +37,13 @@ function showTranslationPanel(loading = false) {
   let html = 
   `
     <h2 class = "translate-selectedText">${tr_data.text || ""}</h2>
-    <div class="close-btn">&times;</div>
+    <div class = "translate-panel-control">
+        <div class="tr-close-btn" title = "Close">&times;</div>
+        <div class = "tr-resize-control">
+          <div id="tr-size-increase-btn" class = "${windowSize === 2 ? " tr-hide" : ""}" title = "Enlarge window (shortcut: =)">&#128474;</div>
+          <div id="tr-size-decrease-btn" class = "${windowSize === 0 ? " tr-hide" : ""} title = "Reduce window (shortcut: -)">&#128475;</div>
+        </div>
+    </div>
     <div class="translate-results">
       Loading data...
     </div>
@@ -47,12 +54,23 @@ function showTranslationPanel(loading = false) {
   // Load the HTML content
   const container = document.createElement('div')
   container.id = "translation-panel"
+  container.className = windowSize === 1 ? "translation-panel-expand" : windowSize == 2 ? "translation-panel-expand-2" : ""
+
   document.body.appendChild(container)
 
   container.innerHTML = html
-  document.addEventListener("mousedown", handleOutsideClick)
-  container.querySelector(".close-btn").addEventListener("click", closeTranslationPanel);
   translationPanel = container
+
+  document.addEventListener("mousedown", handleOutsideClick)
+  container.querySelector(".tr-close-btn").addEventListener("click", closeTranslationPanel);
+  container.querySelector("#tr-size-increase-btn").addEventListener("click", () => resizeWindow(1));
+  container.querySelector("#tr-size-decrease-btn").addEventListener("click", () => resizeWindow(-1));
+
+  translationPanel.addEventListener('keydown', (e)=>{
+      if (e.key === '=') resizeWindow(1)
+      else if (e.key === '-') resizeWindow(-1)
+  })
+
 
   let DOMresults = document.querySelector(".translate-results")
   let DOMheader = document.querySelector(".translate-selectedText")
@@ -78,10 +96,17 @@ function showTranslationPanel(loading = false) {
 
   let {simplified, traditional, pinyin, definitions} = tr_data.entries[tr_data.page]
 
+  let charResize = ""
+  if(windowSize === 0){
+    if(tr_data.text.length === 5) charResize = " tr-reduced-size-5"
+    if(tr_data.text.length === 6) charResize = " tr-reduced-size-6"
+    if(tr_data.text.length > 6) charResize = " tr-reduced-size-max"
+  }
+
   DOMheader.innerHTML = `
     <span>${pinyin}</span>
-    <div id = "trans-simp-char">${simplified}</div>
-    <div id = "trans-trad-char">${traditional}</div>
+    <div id = "trans-simp-char" class = "${charResize}">${simplified}</div>
+    <div id = "trans-trad-char" class = "${charResize}">${traditional}</div>
     <small>Simplified</small>
     <small>Traditional</small>
   `
@@ -105,9 +130,14 @@ function showTranslationPanel(loading = false) {
   if(tr_data.text.length > 2)
     makeCompoundListHTML(DOMresults, tr_data.subCompounds, `Compounds used in ${trimText(tr_data.text)}`, `No compound words used in ${trimText(tr_data.text)} found!`)
 
+  const DOMstrokeOrderContainer = document.createElement('a')
+  DOMstrokeOrderContainer.setAttribute("href", `https://www.strokeorder.com/chinese/${tr_data.text}`)
+
   const DOMstrokeOrder = document.createElement('img')
   DOMstrokeOrder.src = tr_data.strokeImgUrl
   DOMstrokeOrder.classList.add('translate-stroke-order')
+
+  DOMstrokeOrderContainer.appendChild(DOMstrokeOrder)
 
   const DOMsentences = document.createElement('div')
   DOMsentences.innerHTML = "Sentences loading..."
@@ -117,7 +147,7 @@ function showTranslationPanel(loading = false) {
   const exploreTitles = []
 
   if(tr_data.text.length == 1){
-    exploreChildren.push(DOMstrokeOrder)
+    exploreChildren.push(DOMstrokeOrderContainer)
     exploreTitles.push("Stroke order")
   }
 
@@ -125,6 +155,8 @@ function showTranslationPanel(loading = false) {
   exploreTitles.push("Sentences")
 
   makeExploreBar(DOMresults, exploreChildren, exploreTitles)
+  translationPanel.setAttribute('tabindex', 0);
+  translationPanel.focus()
 
 }
 
@@ -132,10 +164,33 @@ function closeTranslationPanel() {
   if (!translationPanel) return;
   
   document.removeEventListener("click", handleOutsideClick);
-  translationPanel.querySelector(".close-btn").removeEventListener("click", closeTranslationPanel);
+  translationPanel.querySelector(".tr-close-btn").removeEventListener("click", closeTranslationPanel);
 
   translationPanel.remove();
   translationPanel = null;
+}
+
+function resizeWindow(change){
+  const DOMsize_decrease = translationPanel.querySelector("#tr-size-decrease-btn")
+  const DOMsize_increase = translationPanel.querySelector("#tr-size-increase-btn")
+
+  windowSize = Math.max(0, Math.min(2, windowSize + change)) //clamp [0,2]
+  translationPanel.classList.remove("translation-panel-expand")
+  translationPanel.classList.remove("translation-panel-expand-2")
+
+  if(windowSize === 0){
+    DOMsize_increase.className = ""
+    DOMsize_decrease.className = "tr-hide"
+  }
+  else if(windowSize === 1){
+    DOMsize_increase.className = ""
+    DOMsize_decrease.className = ""
+    translationPanel.classList.add("translation-panel-expand")
+  }else{
+    DOMsize_increase.className = "tr-hide"
+    DOMsize_decrease.className = ""
+    translationPanel.classList.add("translation-panel-expand-2")
+  }
 }
 
 function handleOutsideClick(event) {
@@ -232,8 +287,6 @@ function makeNavChip(parent){
         processSentences(tr_data.sentenceData, tr_data.sentenceQuery)
     }
   });
-  translationPanel.setAttribute('tabindex', 0);
-  translationPanel.focus()
 
   DOMcontrol.appendChild(leftArrow)
   DOMcontrol.appendChild(counter)
@@ -410,7 +463,7 @@ async function processSentences(data, queryUrl){
       $wordsAndPinyin.append($single)
     }
 
-    const $english = $('<div></div>').addClass('sentences-english-tr').text(p.english)
+    const $english = $('<div></div>').addClass('sentences-english-tr').text("⟶ " + p.english)
     if(sentencesOnlyWords) 
       $english.addClass('tr-hide');
 

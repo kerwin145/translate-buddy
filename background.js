@@ -65,7 +65,7 @@ async function processTranslation(text, tabId){
     tr_data.strokeImgUrl = `https://www.strokeorder.com/assets/bishun/guide/${text.charCodeAt(0)}.png`
 
   chrome.tabs.sendMessage(tabId, { action: "showTranslationPanel", data: tr_data });
-  
+
   try{
     //get sentences
     let data = await queryCache(text)
@@ -246,7 +246,7 @@ async function getCache() {
 
 async function setCache(cache) {
   await chrome.storage.local.set({ cache: JSON.stringify(cache) })
-  console.log(await chrome.storage.local.getBytesInUse())
+  // console.log(await chrome.storage.local.getBytesInUse())
 }
 
 async function updateCache(key, value) {

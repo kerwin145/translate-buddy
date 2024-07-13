@@ -1,4 +1,6 @@
-/* Global styles */
+html { font-size: 100% !important; }
+
+/* === Global styles === */
 .tr-active{
   font-weight: bold;
 }
@@ -7,15 +9,16 @@
   display: none;
 }
 
-#translation-panel ul{
-  padding: 3px;
-}
-
 .zero-width{
   width: 0px;
 }
 
-/* ------- */
+#translation-panel a, #translation-panel a:hover, #translation-panel a:visited{
+  color: indigo;
+}
+/* ========= */
+
+/* ### Main styles ### */
 
 #translation-panel{
   position: fixed;
@@ -26,32 +29,36 @@
   background-color: rgb(240, 248, 255);
   border-radius: 10px;
   z-index: 9999;
-  min-width: max(300px, 20vw);
+  min-width: max(300px, 24vw);
   width: min-content;
   max-width: 30vw;
   outline:none;
   font-family: Arial, sans-serif;
+  font-size: 1rem;
 }
 
 #translation-panel h3{
-  font-size: large;
+  font-size: 1.25em;
+  font-weight: normal;
+  margin-bottom: 2px;
+  padding: 0;
 }
 
 .translate-noresults{
-  margin-bottom: 1rem;
+  margin-bottom: 1em;
 }
 
 #translation-panel .tr-HSK-Lvl{
   height: 0px;
   font-weight: bold;
-  font-size: small;
+  font-size: .7em;
   margin-bottom: -4px;
 }
 
 .translate-selectedText{
   margin: 0 auto;
-  margin-bottom: 0.5rem;
-  padding: 4px 1rem;
+  margin-bottom: 0.5em;
+  padding: 4px 1em;
   width: fit-content;
   max-width: 28vw;
   text-overflow: ellipsis;
@@ -62,12 +69,34 @@
   border-radius: 4px;
 }
 
-.close-btn{
-  cursor: pointer;
-  font-size: large;
+.translate-panel-control{
+  top: 1em;
+  right: 1em;
   position: absolute;
-  top: 20px;
-  right: 20px
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.tr-close-btn{
+  cursor: pointer;
+  font-size: 1.25em;
+  line-height: 1;
+}
+
+.tr-resize-control{
+  display: flex;
+  flex-direction: column;
+}
+
+#tr-size-increase-btn, #tr-size-decrease-btn{
+  cursor: pointer;
+  font-size: 1.25em;
+  transition: all .3s ease;
+}
+
+#tr-size-increase-btn:hover, #tr-size-decrease-btn:hover{
+  transform: scale(1.15);
 }
 
 .translate-results{
@@ -78,7 +107,7 @@
 }
 
 .translate-results ul{
-  font-size: medium;
+  font-size: 1em;
 }
 .translate-header{
   display: grid;
@@ -87,6 +116,7 @@
   border: none;
   gap: 8px;
   margin-bottom: 0;
+  font-size: 1em;
 }
 
 .translate-header > *{
@@ -96,14 +126,16 @@
 .translate-header > span{
   grid-row: 1/2;
   grid-column: 1/3;
-  font-size: small;
+  font-size: 1em;
+  line-height: 1;
+  margin-bottom: 2px
 }
 
 .translation-definitions{
-  font-size: medium;
+  font-size: 1em;
   max-height: 20vh;
   overflow: auto;
-  padding-bottom: 1px;
+  padding-bottom: 8px;
 }
 
 #translation-panel ul li{
@@ -113,17 +145,19 @@
 
 /* Styling for the first row */
 .translate-header > small {
-  font-size: x-small;
+  font-size: .6em;
   color: gray;
+  line-height: 1;
 }
 
 /* Styling for the second row */
 #trans-simp-char, #trans-trad-char {
   background-color: ghostwhite;
+  font-weight: bold;
   margin: 0 -8px;
   padding: 4px 16px;
   border-radius: 8px;
-  font-size: x-large;
+  font-size: 1.65em;
 }
 
 #trans-trad-char{
@@ -132,10 +166,6 @@
 
 #trans-simp-char{
   border-left: none;
-}
-
-.tranlsate-fontsmall > #trans-simp-char, .tranlsate-fontsmall > #trans-trad-char{
-  font-size: large;
 }
 
 .translate-results li{
@@ -161,18 +191,13 @@
 
 /* Compound word styles */
 .translate-compounds{
-  padding-bottom: 1rem;
+  padding-bottom: 1em;
 }
 
 .translate-no-compounds{
   color: rgba(0,0,0,.35);
   margin: auto;
   text-overflow: ellipsis;
-}
-
-.translate-compounds h5{
-  font-size: medium;
-  margin: 1rem 0;
 }
 
 .translate-comp-entry-container{
@@ -205,7 +230,6 @@ opacity: 85%;
 .translate-comp-definitions{
   display: none;
   position: absolute;
-  font-size: small;
   right: 0;
   background-color: aliceblue;
   border: 1px solid rgba(180,185,192, .7);
@@ -223,7 +247,7 @@ opacity: 85%;
 }
 
 .translate-comp span{
-  font-size: medium;
+  font-size: 1em;
   background-color: ghostwhite;
   border: 1px solid #c9cc;
   border-radius: 4px;
@@ -268,6 +292,8 @@ opacity: 85%;
   margin-bottom: 2px; 
   outline: none;
   color: indigo;
+  font-size: 1em;
+  line-height: 1;
 }
 
 .translation-explore-controls button:nth-child(2){
@@ -296,41 +322,40 @@ opacity: 85%;
 .translate-sentences .sentences-block{
   display: flex;
   flex-direction: column;
-  margin-bottom: .5rem;
+  margin-bottom: .5em;
   border-bottom: 1px dashed silver;
 }
 
 .translate-sentences .sentences-pinyin{
-  font-size: small;
+  font-size: 1em;
   text-align: center;
 }
 
 .translate-sentences .sentences-words{
-  font-size: large;
+  font-size: 1.15em;
   text-align: center;
 }
 
 .translate-sentences .sentences-line{
   display: flex;
-  gap: 2px;
+  gap: 3px;
   padding-right: 2px;
   flex-wrap: wrap;
 }
 
 .translate-sentences .sentences-english-tr{
-  font-size: small;
-  margin-left: .5rem;
+  font-size: 1em;
   font-style: italic;
   margin-bottom: 2px;
 }
 .translate-sentences .sentences-more{
-  font-size: smaller;
+  font-size: 1em;
   color: indigo;
 }
 
 .translate-sentences .sentences-attribution{
   margin-top: 4px;
-  font-size: small;
+  font-size: .7em;
   color: silver;
 }
 
@@ -346,7 +371,7 @@ opacity: 85%;
   gap: 4px
 }
 .sentences-control label{
-  font-size: small;
+  font-size: .7em;
   margin: 0;
   font-weight: normal;
 }
@@ -357,3 +382,64 @@ opacity: 85%;
 .sentences-no-results{
   color: rgba(0,0,0,.35);
 }
+
+
+/* --- Resizing styles --- */
+.tr-reduced-size-5{
+  font-size: 1.5em;
+}
+
+.tr-reduced-size-6{
+  font-size: 1.2em;
+}
+
+.tr-reduced-size-max{
+  font-size: 1em;
+}
+
+#translation-panel.translation-panel-expand{
+  max-width: 40vw;
+  font-size: 1.25rem;
+  width: fit-content;
+}
+
+#translation-panel.translation-panel-expand h3{
+  padding-bottom: 4px;
+}
+
+#translation-panel.translation-panel-expand .translation-definitions{
+  max-height: 24vh;
+}
+
+#translation-panel.translation-panel-expand .translate-comp{
+  margin: 2px 0;
+}
+
+#translation-panel.translation-panel-expand .translation-explore-panels{
+  justify-content: flex-start;
+}
+
+#translation-panel.translation-panel-expand .translate-stroke-order, #translation-panel.translation-panel-expand-2 .translate-stroke-order  {
+  max-height: 288px;
+  max-width: 288px;
+}
+
+#translation-panel.translation-panel-expand .translate-sentences .sentences-line{
+  gap: 4px;
+}
+
+#translation-panel.translation-panel-expand .translate-selectedText{
+  max-width: 36vw;
+}
+
+/* Even biggerr */
+#translation-panel.translation-panel-expand-2{
+  max-width: 55vw;
+  font-size: 1.4rem;
+  width: fit-content;
+}
+
+#translation-panel.translation-panel-expand-2 .translate-selectedText{
+  max-width: 50vw;
+}
+/* ------- */
