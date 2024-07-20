@@ -1,5 +1,5 @@
 //initializing this here to show structure. Who needs object oriented programming?
-tr_data = {text: "", HSK_levels: null, page: null, entries: [], compounds: [], subCompounds: [], strokeImgUrl: "", useImgCache: false, sentenceData: null, sentenceQuery: null}
+tr_data = {text: "", HSK_levels: null, page: null, entries: [], compounds: [], subCompounds: [], strokeImgUrl: "", useImgCache: false, sentenceData: null, sentenceQuery: null, history: {}}
 const invertedIndex = new Map()
 let dictionaryData = null;
 let dictionaryDataIndexed = new Map() //allows O(1) retrieval where the key is the simplified word. The value is a list of entries with that key (as a single word can have multiple entries)
@@ -14,7 +14,7 @@ chrome.runtime.onInstalled.addListener(() => {
 
 chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
   if (request.action === "translate") {
-    handleTranslate(request.text, sender.tab.id)
+    handleTranslate(request.text, sender.tab.id, request.updateHistoryAction)
   } 
   else if(request.action === "setCache"){
     updateCache(request.data.key, request.data.value)
@@ -23,12 +23,12 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
 
 chrome.contextMenus.onClicked.addListener((info, tab) => {
   if (info.menuItemId === "translate" && info.selectionText) {
-    console.log(tab)
+    // console.log(tab)
     handleTranslate(info.selectionText, tab.id)
   }
 });
 
-async function handleTranslate(text, tabId){
+async function handleTranslate(text, tabId, updateHistoryAction = "NEW"){
   if(!dictionaryData){  
     chrome.tabs.sendMessage(tabId, { action: "showLoadingPanel", data: {text}});
     const res = await fetch(chrome.runtime.getURL('cedict.json'))
@@ -37,16 +37,16 @@ async function handleTranslate(text, tabId){
     buildIndexedDictionary(); 
     buildInvertedIndex()
   }
-  await processTranslation(text, tabId) 
+
+  await processTranslation(text, tabId, updateHistoryAction) 
 }
 
-async function processTranslation(text, tabId){
+async function processTranslation(text, tabId, updateHistoryAction){
   text = text.replace(/\s/g, "")
   const sentenceQuery = `https://www.purpleculture.net/sample_sentences/?word=${text}`
   let targetEntries = dictionaryData.filter(x => x.simplified === text || x.traditional === text)
-  console.log(targetEntries)
 
-  tr_data = {text: "", HSK_levels: null, page: null, entries: [], compounds: [], subCompounds: [], strokeImgUrl: "", sentenceData: null, sentenceQuery}
+  tr_data = {text: "", HSK_levels: null, page: null, entries: [], compounds: [], subCompounds: [], strokeImgUrl: "", sentenceData: null, sentenceQuery, history: null}
   tr_data.text = text;
   tr_data.page = 0;
   tr_data.entries = sortEntries(targetEntries, true)
@@ -64,7 +64,12 @@ async function processTranslation(text, tabId){
   if(text.length === 1)
     tr_data.strokeImgUrl = `https://www.strokeorder.com/assets/bishun/guide/${text.charCodeAt(0)}.png`
 
+  tr_data.history = await updateHistory(text, targetEntries.length == 0 ? "NONE" : updateHistoryAction)
+
   chrome.tabs.sendMessage(tabId, { action: "showTranslationPanel", data: tr_data });
+
+  if(targetEntries.length == 0)
+    return
 
   try{
     //get sentences
@@ -79,6 +84,34 @@ async function processTranslation(text, tabId){
       chrome.tabs.sendMessage(tabId, { action: "loadSentences", data: html, isCached: false});
     }
   } catch (e) {console.log(e)}
+}
+
+async function updateHistory(text, updateHistoryAction){
+  const res = await chrome.storage.local.get('history')
+  const history = res.history || { entries: [], idx: 0 };
+  let { idx, entries } = history;
+
+  if(updateHistoryAction === "BACK" && idx > 0){
+    idx -= 1
+  }
+  else if(updateHistoryAction === "FORWARD" && idx < entries.length)
+    idx += 1
+  else if(updateHistoryAction === "NEW" && entries[entries.length - 1] !== text){
+    entries = entries.slice(0, idx) //remove all forward
+    entries.push(text)
+    if(entries.length > 16)
+      entries.shift() //the array shall be maxed at 16
+    idx = entries.length 
+
+  }else if(updateHistoryAction === "NONE" && idx === entries.length){ //Don't ask how I got to this, but it works. The goal is for non-result words to not impede the history
+      idx = entries.length + 1
+  }
+  
+  const pref = entries.slice(0, idx-1)
+  const suff = updateHistoryAction === "NEW" ? [] : entries.slice(idx, entries.length)
+  chrome.storage.local.set({ history: {entries, idx}})
+
+  return {pref, suff}
 }
 
   //inverted index keeps track of phrases starting with a pair of words
@@ -238,14 +271,15 @@ function sortEntries(entries, properNounPenealty = false){
 }
 
 //Handle cache
-const MAX_CACHE_SIZE = 1000;
+const MAX_CACHE_SIZE = 500;
 async function getCache() {
+  // await chrome.storage.local.clear() 
   const result = await chrome.storage.local.get('cache')
-  return result.cache ? JSON.parse(result.cache) : {}
+  return result.cache || {}
 }
 
 async function setCache(cache) {
-  await chrome.storage.local.set({ cache: JSON.stringify(cache) })
+  await chrome.storage.local.set({ cache })
   // console.log(await chrome.storage.local.getBytesInUse())
 }
 
@@ -264,7 +298,7 @@ async function updateCache(key, value) {
         delete cache[oldestKey]
     }
 
-  console.log(cache)
+  // console.log(cache)
   cache[key] = { data: value, timestamp: Date.now() }
   await setCache(cache)
 }

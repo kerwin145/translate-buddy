@@ -1,21 +1,36 @@
-html { font-size: 100% !important; }
-
 /* === Global styles === */
 .tr-active{
   font-weight: bold;
 }
 
 .tr-hide{
-  display: none;
+  display: none !important;
 }
 
 .zero-width{
   width: 0px;
 }
 
+.tr-maxheight-45vh{
+  max-height: 45vh !important;
+}
+
 #translation-panel a, #translation-panel a:hover, #translation-panel a:visited{
   color: indigo;
 }
+
+.div-btn{
+  transition: all .3s ease;
+}
+
+.div-btn:hover{
+  transform: scale(1.1);
+}
+
+.div-btn:active{
+  opacity: 85%;
+}
+
 /* ========= */
 
 /* ### Main styles ### */
@@ -24,17 +39,18 @@ html { font-size: 100% !important; }
   position: fixed;
   top: 20px;
   right: 20px;
-  padding: 1rem calc(1rem + 20px);
+  padding: 16px calc(1rem + 20px);
   color: indigo;
   background-color: rgb(240, 248, 255);
   border-radius: 10px;
+  border-top-left-radius: 0;
   z-index: 9999;
   min-width: max(300px, 24vw);
   width: min-content;
   max-width: 30vw;
   outline:none;
   font-family: Arial, sans-serif;
-  font-size: 1rem;
+  font-size: 16px;
 }
 
 #translation-panel h3{
@@ -51,7 +67,7 @@ html { font-size: 100% !important; }
 #translation-panel .tr-HSK-Lvl{
   height: 0px;
   font-weight: bold;
-  font-size: .7em;
+  font-size: 1em;
   margin-bottom: -4px;
 }
 
@@ -67,6 +83,47 @@ html { font-size: 100% !important; }
   background-color: ghostwhite;
   border: 1px solid gainsboro;
   border-radius: 4px;
+}
+
+.translate-panel-nav-wrapper{
+  position: absolute;
+  top: 0;
+  right: 100%; 
+  padding: .7em 2px;
+  background-color: rgb(240, 248, 255);
+  border-top-left-radius: 10px;
+  border-bottom-left-radius: 10px;
+  /* border-right: 1px dashed rgba(0,0,0,.1); */
+  transition: width .3s ease, height .3s ease;
+  font-size: 1.2em;
+}
+
+.translate-panel-nav-wrapper:hover p{
+  width: 0;
+  height: 0;
+  opacity: 0;
+}
+
+.translate-panel-nav{
+  width: 0;
+  height: 0;
+  opacity: 0;
+}
+
+.translate-panel-nav-wrapper:hover .translate-panel-nav{
+  padding: .7em 8px;
+  opacity: 100%;
+  width: fit-content;
+  height: fit-content;
+  display: flex;
+  flex-direction: column;
+  line-height: 1;
+  gap: 1em;
+}
+
+
+.translate-panel-nav > *{
+  cursor: pointer;
 }
 
 .translate-panel-control{
@@ -212,7 +269,10 @@ html { font-size: 100% !important; }
 
 .translate-comp-entry-container::-webkit-scrollbar, .translation-definitions::-webkit-scrollbar, .sentences-body::-webkit-scrollbar{
   width: 8px;
-  opacity: 85%;
+}
+
+.translate-comp-entry-container::-webkit-scrollbar:hover, .translation-definitions::-webkit-scrollbar:hover, .sentences-body::-webkit-scrollbar:hover{
+  cursor: pointer;
 }
 
 .translate-comp-entry-container::-webkit-scrollbar-thumb, .translation-definitions::-webkit-scrollbar-thumb, .sentences-body::-webkit-scrollbar-thumb{
@@ -252,6 +312,7 @@ opacity: 85%;
   border: 1px solid #c9cc;
   border-radius: 4px;
   padding: 4px 8px;
+  cursor: pointer;
 }
 
 .translate-comp span.translate-propernoun{
@@ -305,8 +366,8 @@ opacity: 85%;
 
 /* Stroke order*/
 .translate-stroke-order{
-  max-width: 256px;
-  max-height: 256px;
+  max-width: 224px;
+  max-height: 224px;
 }
 
 /* Example sentences */
@@ -368,7 +429,8 @@ opacity: 85%;
 
 .sentences-control > div{
   display: flex;
-  gap: 4px
+  gap: 4px;
+  align-items: center;
 }
 .sentences-control label{
   font-size: .7em;
@@ -398,8 +460,8 @@ opacity: 85%;
 }
 
 #translation-panel.translation-panel-expand{
-  max-width: 40vw;
-  font-size: 1.25rem;
+  max-width: 36vw;
+  font-size: 20px;
   width: fit-content;
 }
 
@@ -419,9 +481,9 @@ opacity: 85%;
   justify-content: flex-start;
 }
 
-#translation-panel.translation-panel-expand .translate-stroke-order, #translation-panel.translation-panel-expand-2 .translate-stroke-order  {
-  max-height: 288px;
-  max-width: 288px;
+#translation-panel.translation-panel-expand .translate-stroke-order{
+  max-height: 256px;
+  max-width: 256px;
 }
 
 #translation-panel.translation-panel-expand .translate-sentences .sentences-line{
@@ -429,17 +491,22 @@ opacity: 85%;
 }
 
 #translation-panel.translation-panel-expand .translate-selectedText{
-  max-width: 36vw;
+  max-width: 34vw;
 }
 
 /* Even biggerr */
 #translation-panel.translation-panel-expand-2{
   max-width: 55vw;
-  font-size: 1.4rem;
+  font-size: 24px;
   width: fit-content;
 }
 
+#translation-panel.translation-panel-expand-2 .translate-stroke-order  {
+  max-height: 288px;
+  max-width: 288px;
+}
+
 #translation-panel.translation-panel-expand-2 .translate-selectedText{
-  max-width: 50vw;
+  max-width: 45vw;
 }
 /* ------- */

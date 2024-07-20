@@ -29,14 +29,24 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 });
 
-function sendQuery(text){
-  chrome.runtime.sendMessage({action: "translate", text})
+//check history could be "BACK" "FORWARD" or null
+function sendQuery(text, updateHistoryAction = "NEW"){
+  chrome.runtime.sendMessage({action: "translate", updateHistoryAction, text})
 }
 
 function showTranslationPanel(loading = false) {
+  console.log(tr_data.history)
   let html = 
   `
     <h2 class = "translate-selectedText">${tr_data.text || ""}</h2>
+    <div class = "translate-panel-nav-wrapper">
+      <p> ☰ </p>
+      <div class = "translate-panel-nav">
+        ${tr_data.history?.pref.length > 0 ? `<div id = "tr-nav-back" class = "div-btn">🡠</div>` : ""}
+        ${tr_data.history?.suff.length > 0 ? `<div id = "tr-nav-forward" class = "div-btn">🡢</div>` : ""}
+        <!-- <div id = "abcdex"> C </div> -->
+      </div>
+    </div>
     <div class = "translate-panel-control">
         <div class="tr-close-btn" title = "Close">&times;</div>
         <div class = "tr-resize-control">
@@ -65,6 +75,9 @@ function showTranslationPanel(loading = false) {
   container.querySelector(".tr-close-btn").addEventListener("click", closeTranslationPanel);
   container.querySelector("#tr-size-increase-btn").addEventListener("click", () => resizeWindow(1));
   container.querySelector("#tr-size-decrease-btn").addEventListener("click", () => resizeWindow(-1));
+  container.querySelector('#tr-nav-back')?.addEventListener("click", () => sendQuery(tr_data.history.pref[tr_data.history.pref.length - 1], "BACK"))
+  container.querySelector('#tr-nav-forward')?.addEventListener("click", () => sendQuery(tr_data.history.suff[0], "FORWARD"))
+  //TESTING container.querySelector('#abcdex').addEventListener("click", () => chrome.storage.local.clear())
 
   translationPanel.addEventListener('keydown', (e)=>{
       if (e.key === '=') resizeWindow(1)
@@ -84,7 +97,7 @@ function showTranslationPanel(loading = false) {
     DOMheader.innerHTML = trimText(tr_data.text)
     DOMresults.innerHTML = `<div class = "translate-noresults"> Not in my dictionary, sorry! :-( </div>`
     makeCompoundListHTML(DOMresults, tr_data.compounds, `Compounds using ${trimText(tr_data.text)}`, `No compound words using ${trimText(tr_data.text)} found!`)
-    makeCompoundListHTML(DOMresults, tr_data.subCompounds, `Compounds used in ${trimText(tr_data.text)}`, `No compound words used in ${trimText(tr_data.text)} found!`)
+    makeCompoundListHTML(DOMresults, tr_data.subCompounds, `Compounds used in ${trimText(tr_data.text)}`, `No compound words used in ${trimText(tr_data.text)} found!`, true)
     return
   }
 
@@ -128,7 +141,7 @@ function showTranslationPanel(loading = false) {
 
   makeCompoundListHTML(DOMresults, tr_data.compounds, `Compounds using ${trimText(tr_data.text)}`, `No compound words using ${trimText(tr_data.text)} found!`)
   if(tr_data.text.length > 2)
-    makeCompoundListHTML(DOMresults, tr_data.subCompounds, `Compounds used in ${trimText(tr_data.text)}`, `No compound words used in ${trimText(tr_data.text)} found!`)
+    makeCompoundListHTML(DOMresults, tr_data.subCompounds, `Compounds used in ${trimText(tr_data.text)}`, `No compound words used in ${trimText(tr_data.text)} found!`, true)
 
   const DOMstrokeOrderContainer = document.createElement('a')
   DOMstrokeOrderContainer.setAttribute("href", `https://www.strokeorder.com/chinese/${tr_data.text}`)
@@ -293,12 +306,16 @@ function makeNavChip(parent){
   DOMcontrol.appendChild(rightArrow)
   parent.appendChild(DOMcontrol)
 }
-function makeCompoundListHTML(parent, compounds, blockTitle, blockNoResultsText){
+
+// @param display mode: if true, it means we are generating a compound list html for "compounds used in"
+function makeCompoundListHTML(parent, compounds, blockTitle, blockNoResultsText, displayMode = false){
   let DOMcompounds = document.createElement('div')
   parent.appendChild(DOMcompounds)
   DOMcompounds.className = "translate-compounds"
 
   if(compounds.length == 0){
+    if(displayMode)
+      return
     DOMcompounds.className = "translate-compounds"
     DOMcompounds.innerHTML = blockNoResultsText
     DOMcompounds.classList.add('translate-no-compounds')
@@ -308,7 +325,7 @@ function makeCompoundListHTML(parent, compounds, blockTitle, blockNoResultsText)
   let DOMcompounds_header = document.createElement('h3')
   DOMcompounds_header.innerHTML = `${blockTitle}`
   let DOMcompounds_elements = document.createElement('div')
-  DOMcompounds_elements.className = "translate-comp-entry-container"
+  DOMcompounds_elements.className = `translate-comp-entry-container${displayMode ? " tr-maxheight-45vh" : ""}`
 
   DOMcompounds.appendChild(DOMcompounds_header)
   DOMcompounds.appendChild(DOMcompounds_elements)
