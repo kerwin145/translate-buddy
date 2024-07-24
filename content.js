@@ -35,7 +35,6 @@ function sendQuery(text, updateHistoryAction = "NEW"){
 }
 
 function showTranslationPanel(loading = false) {
-  console.log(tr_data.history)
   let html = 
   `
     <h2 class = "translate-selectedText">${tr_data.text || ""}</h2>
@@ -45,6 +44,8 @@ function showTranslationPanel(loading = false) {
         ${tr_data.history?.pref.length > 0 ? `<div id = "tr-nav-back" class = "div-btn">🡠</div>` : ""}
         ${tr_data.history?.suff.length > 0 ? `<div id = "tr-nav-forward" class = "div-btn">🡢</div>` : ""}
         <!-- <div id = "abcdex"> C </div> -->
+        <div id = "tr-bank-controls">
+        </div>
       </div>
     </div>
     <div class = "translate-panel-control">
@@ -71,19 +72,19 @@ function showTranslationPanel(loading = false) {
   container.innerHTML = html
   translationPanel = container
 
-  document.addEventListener("mousedown", handleOutsideClick)
+  document.addEventListener("dblclick", handleOutsideClick)
   container.querySelector(".tr-close-btn").addEventListener("click", closeTranslationPanel);
   container.querySelector("#tr-size-increase-btn").addEventListener("click", () => resizeWindow(1));
   container.querySelector("#tr-size-decrease-btn").addEventListener("click", () => resizeWindow(-1));
   container.querySelector('#tr-nav-back')?.addEventListener("click", () => sendQuery(tr_data.history.pref[tr_data.history.pref.length - 1], "BACK"))
   container.querySelector('#tr-nav-forward')?.addEventListener("click", () => sendQuery(tr_data.history.suff[0], "FORWARD"))
+
   //TESTING container.querySelector('#abcdex').addEventListener("click", () => chrome.storage.local.clear())
 
   translationPanel.addEventListener('keydown', (e)=>{
       if (e.key === '=') resizeWindow(1)
       else if (e.key === '-') resizeWindow(-1)
   })
-
 
   let DOMresults = document.querySelector(".translate-results")
   let DOMheader = document.querySelector(".translate-selectedText")
@@ -168,6 +169,9 @@ function showTranslationPanel(loading = false) {
   exploreTitles.push("Sentences")
 
   makeExploreBar(DOMresults, exploreChildren, exploreTitles)
+  addWordBankControl();  //async
+
+
   translationPanel.setAttribute('tabindex', 0);
   translationPanel.focus()
 
@@ -176,7 +180,7 @@ function showTranslationPanel(loading = false) {
 function closeTranslationPanel() {
   if (!translationPanel) return;
   
-  document.removeEventListener("click", handleOutsideClick);
+  document.removeEventListener("dblclick", handleOutsideClick);
   translationPanel.querySelector(".tr-close-btn").removeEventListener("click", closeTranslationPanel);
 
   translationPanel.remove();
@@ -221,6 +225,50 @@ function trimText(text, limit = 10){
 function isProperNoun(pinyin){
   const capitalRegex = /[A-ZĀÁǍÀĒÉĚÈĪÍǏÌŌÓǑÒŪÚǓÙÜǗǙǛ]/;
   return capitalRegex.test(pinyin)
+}
+
+async function addWordBankControl(){
+  var container = $('#tr-bank-controls');
+
+  const res = await chrome.storage.local.get('wordbank');
+  const bank = res.wordbank || {};
+
+  var deleteWord = $('<img>', { src: chrome.runtime.getURL('images/bank_delete.png'), id: 'tr-delete-bank', class: 'tr-update-bank' });
+  var addWord = $('<img>', { src: chrome.runtime.getURL('images/bank_add.png'), id: 'tr-add-bank', class: 'tr-update-bank' });
+
+  deleteWord.on("mouseleave", ()=>{deleteWord.removeClass('tr-bank-delete-confirm')})
+  deleteWord.on("click", async () => {
+    if(!deleteWord.hasClass("tr-bank-delete-confirm")){
+      deleteWord.addClass("tr-bank-delete-confirm")
+    }else{
+      delete bank[tr_data.text];
+      await chrome.storage.local.set({ wordbank: bank });
+      deleteWord.toggleClass('tr-hide')
+      deleteWord.toggleClass("tr-bank-delete-confirm")
+      addWord.toggleClass('tr-hide')
+      console.log(bank)
+    }
+
+  });
+
+  addWord.on("click", async () => {
+    bank[tr_data.text] = {
+      time: new Date().toISOString(),
+      url: [window.location.href],
+      mySentences: []
+    };
+    await chrome.storage.local.set({ wordbank: bank });
+    deleteWord.toggleClass('tr-hide')
+    addWord.toggleClass('tr-hide')
+    console.log(bank)
+  });
+
+  container.append(deleteWord);
+  container.append(addWord);
+
+
+  bank[tr_data.text] ? addWord.addClass('tr-hide') : deleteWord.addClass('tr-hide')
+  
 }
 
 /* Explore bar */

@@ -1,4 +1,8 @@
 /* === Global styles === */
+#translation-panel p{
+  margin: 0;
+}
+
 .tr-active{
   font-weight: bold;
 }
@@ -29,6 +33,24 @@
 
 .div-btn:active{
   opacity: 85%;
+}
+
+@keyframes rotateAndScale {
+  0% {
+    transform: rotate(0deg) scale(1);
+  }
+  25% {
+    transform: rotate(-30deg) scale(1.1);
+  }
+  50% {
+    transform: rotate(0deg) scale(.8);
+  }
+  75% {
+    transform: rotate(30deg) scale(1.1);
+  }
+  100% {
+    transform: rotate(0deg) scale(1);
+  }
 }
 
 /* ========= */
@@ -88,8 +110,9 @@
 .translate-panel-nav-wrapper{
   position: absolute;
   top: 0;
-  right: 100%; 
+  left: -.8em;
   padding: .7em 2px;
+  padding-left: 4px;
   background-color: rgb(240, 248, 255);
   border-top-left-radius: 10px;
   border-bottom-left-radius: 10px;
@@ -102,6 +125,8 @@
   width: 0;
   height: 0;
   opacity: 0;
+  margin: 0;
+  padding: 0;
 }
 
 .translate-panel-nav{
@@ -118,12 +143,13 @@
   display: flex;
   flex-direction: column;
   line-height: 1;
-  gap: 1em;
 }
-
 
 .translate-panel-nav > *{
   cursor: pointer;
+  margin: 0;
+  padding: 0;
+  margin-bottom: .5em;
 }
 
 .translate-panel-control{
@@ -153,8 +179,34 @@
 }
 
 #tr-size-increase-btn:hover, #tr-size-decrease-btn:hover{
-  transform: scale(1.15);
+  opacity: .8;
 }
+
+#tr-bank-controls{
+  margin: 0;
+  padding: 0;
+}
+
+#tr-bank-controls::before{
+  content: "";
+  border-top: 1px dashed rgba(0,0,0, .5);
+  display: block;
+  padding-top: 8px;
+}
+
+.tr-update-bank{
+  width: 1.1em;
+  filter: brightness(0) saturate(100%) invert(21%) sepia(40%) saturate(4988%) hue-rotate(265deg) brightness(61%) contrast(129%);
+  margin-left: 4px;
+  display: block;
+  padding: 0;
+  margin: 0;
+}
+
+.tr-bank-delete-confirm{
+  animation: rotateAndScale 3s infinite;
+  animation-timing-function: ease-in;
+  filter: brightness(0) saturate(100%) invert(10%) sepia(98%) saturate(4445%) hue-rotate(287deg) brightness(75%) contrast(112%);}
 
 .translate-results{
   margin: auto;
@@ -245,12 +297,6 @@
   align-items: center;
 }
 
-
-/* Compound word styles */
-.translate-compounds{
-  padding-bottom: 1em;
-}
-
 .translate-no-compounds{
   color: rgba(0,0,0,.35);
   margin: auto;
@@ -309,7 +355,7 @@ opacity: 85%;
 .translate-comp span{
   font-size: 1em;
   background-color: ghostwhite;
-  border: 1px solid #c9cc;
+  border: 1px solid #cc99cccc;
   border-radius: 4px;
   padding: 4px 8px;
   cursor: pointer;
@@ -332,6 +378,7 @@ opacity: 85%;
 }
 /* Explore bar */
 .translation-explore{
+  margin-top: 16px;
   width: 100%;
 }
 .translation-explore-panels{ 
