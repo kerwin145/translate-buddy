@@ -43,7 +43,7 @@
     transform: rotate(-30deg) scale(1.1);
   }
   50% {
-    transform: rotate(0deg) scale(.8);
+    transform: rotate(0deg) scale(.9);
   }
   75% {
     transform: rotate(30deg) scale(1.1);
@@ -110,8 +110,8 @@
 .translate-panel-nav-wrapper{
   position: absolute;
   top: 0;
-  left: -.8em;
-  padding: .7em 2px;
+  left: -.6em;
+  padding: 16px 2px;
   padding-left: 4px;
   background-color: rgb(240, 248, 255);
   border-top-left-radius: 10px;
@@ -136,25 +136,26 @@
 }
 
 .translate-panel-nav-wrapper:hover .translate-panel-nav{
-  padding: .7em 8px;
+  padding: 0 8px;
   opacity: 100%;
   width: fit-content;
   height: fit-content;
   display: flex;
+  gap: .5em;
   flex-direction: column;
   line-height: 1;
 }
 
 .translate-panel-nav > *{
   cursor: pointer;
-  margin: 0;
   padding: 0;
-  margin-bottom: .5em;
+  margin-top: 3px;
 }
 
 .translate-panel-control{
   top: 1em;
   right: 1em;
+  gap: .3em;
   position: absolute;
   display: flex;
   flex-direction: column;
@@ -165,6 +166,7 @@
   cursor: pointer;
   font-size: 1.25em;
   line-height: 1;
+  height: .8em;
 }
 
 .tr-resize-control{
@@ -176,10 +178,17 @@
   cursor: pointer;
   font-size: 1.25em;
   transition: all .3s ease;
+  line-height: 1;
 }
 
-#tr-size-increase-btn:hover, #tr-size-decrease-btn:hover{
+#tr-size-increase-btn:hover{
   opacity: .8;
+  transform: scale(1.1);
+}
+
+#tr-size-decrease-btn:hover{
+  opacity: .8;
+  transform: scale(.9);
 }
 
 #tr-bank-controls{
@@ -194,19 +203,26 @@
   padding-top: 8px;
 }
 
-.tr-update-bank{
+.tr-bank{
   width: 1.1em;
   filter: brightness(0) saturate(100%) invert(21%) sepia(40%) saturate(4988%) hue-rotate(265deg) brightness(61%) contrast(129%);
   margin-left: 4px;
   display: block;
   padding: 0;
   margin: 0;
+  margin-left: 2px;
 }
 
 .tr-bank-delete-confirm{
-  animation: rotateAndScale 3s infinite;
+  animation: rotateAndScale 1.5s infinite;
   animation-timing-function: ease-in;
-  filter: brightness(0) saturate(100%) invert(10%) sepia(98%) saturate(4445%) hue-rotate(287deg) brightness(75%) contrast(112%);}
+  filter: brightness(0) saturate(100%) invert(10%) sepia(98%) saturate(4445%) hue-rotate(287deg) brightness(75%) contrast(112%);
+}
+
+#tr-show-bank{
+  width: 1.3em;
+  margin: 0;
+}
 
 .translate-results{
   margin: auto;

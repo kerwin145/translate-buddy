@@ -23,9 +23,16 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       chrome.runtime.sendMessage({action: "setCache", data: {key: tr_data.text, value: table}}) //we store table rather than the processed data b/c table is smaller, and processing won't take too long
     }
     processSentences(tr_data.sentenceData, tr_data.sentenceQuery)
+  }else if (message.action === "translate-basic-response"){
+    let targetElement = $("#wordbank-content")
+    if(targetElement){
+      tr_data = message.data
+      console.log(tr_data)
+      targetElement.text(tr_data.entries[0].definitions)
+    }
   }
   else{
-    alert("Some error :(")
+    alert(` :(Some unknown messsage:  ${message.action}`)
   }
 });
 
@@ -34,31 +41,7 @@ function sendQuery(text, updateHistoryAction = "NEW"){
   chrome.runtime.sendMessage({action: "translate", updateHistoryAction, text})
 }
 
-function showTranslationPanel(loading = false) {
-  let html = 
-  `
-    <h2 class = "translate-selectedText">${tr_data.text || ""}</h2>
-    <div class = "translate-panel-nav-wrapper">
-      <p> ☰ </p>
-      <div class = "translate-panel-nav">
-        ${tr_data.history?.pref.length > 0 ? `<div id = "tr-nav-back" class = "div-btn">🡠</div>` : ""}
-        ${tr_data.history?.suff.length > 0 ? `<div id = "tr-nav-forward" class = "div-btn">🡢</div>` : ""}
-        <!-- <div id = "abcdex"> C </div> -->
-        <div id = "tr-bank-controls">
-        </div>
-      </div>
-    </div>
-    <div class = "translate-panel-control">
-        <div class="tr-close-btn" title = "Close">&times;</div>
-        <div class = "tr-resize-control">
-          <div id="tr-size-increase-btn" class = "${windowSize === 2 ? " tr-hide" : ""}" title = "Enlarge window (shortcut: =)">&#128474;</div>
-          <div id="tr-size-decrease-btn" class = "${windowSize === 0 ? " tr-hide" : ""} title = "Reduce window (shortcut: -)">&#128475;</div>
-        </div>
-    </div>
-    <div class="translate-results">
-      Loading data...
-    </div>
-  `
+function panelSetUp(preHtml, postHtml){
   if (translationPanel) 
     closeTranslationPanel();
 
@@ -69,22 +52,58 @@ function showTranslationPanel(loading = false) {
 
   document.body.appendChild(container)
 
-  container.innerHTML = html
-  translationPanel = container
+  let baseHtml = `
+    <div class = "translate-panel-control">
+        <div class="tr-close-btn" title = "Close">&times;</div>
+        <div class = "tr-resize-control">
+          <div id="tr-size-increase-btn" class = "${windowSize === 2 ? " tr-hide" : ""}" title = "Enlarge window (shortcut: =)">&#128474;</div>
+          <div id="tr-size-decrease-btn" class = "${windowSize === 0 ? " tr-hide" : ""} title = "Reduce window (shortcut: -)">&#128475;</div>
+        </div>
+    </div>
+  `
 
+  container.innerHTML = preHtml + baseHtml + postHtml
+  translationPanel = container
   document.addEventListener("dblclick", handleOutsideClick)
   container.querySelector(".tr-close-btn").addEventListener("click", closeTranslationPanel);
   container.querySelector("#tr-size-increase-btn").addEventListener("click", () => resizeWindow(1));
   container.querySelector("#tr-size-decrease-btn").addEventListener("click", () => resizeWindow(-1));
-  container.querySelector('#tr-nav-back')?.addEventListener("click", () => sendQuery(tr_data.history.pref[tr_data.history.pref.length - 1], "BACK"))
-  container.querySelector('#tr-nav-forward')?.addEventListener("click", () => sendQuery(tr_data.history.suff[0], "FORWARD"))
-
-  //TESTING container.querySelector('#abcdex').addEventListener("click", () => chrome.storage.local.clear())
-
+  
   translationPanel.addEventListener('keydown', (e)=>{
-      if (e.key === '=') resizeWindow(1)
-      else if (e.key === '-') resizeWindow(-1)
+    if (e.key === '=') resizeWindow(1)
+    else if (e.key === '-') resizeWindow(-1)
   })
+
+  translationPanel.setAttribute('tabindex', 0);
+  translationPanel.focus()
+}
+
+function showTranslationPanel(loading = false) {
+  let preHtml = `<h2 class = "translate-selectedText">${tr_data.text || ""}</h2>
+    <div class = "translate-panel-nav-wrapper">
+      <p> ☰ </p>
+      <div class = "translate-panel-nav">
+        ${tr_data.history?.pref.length > 0 ? `<div id = "tr-nav-back" class = "div-btn">🡠</div>` : ""}
+        ${tr_data.history?.suff.length > 0 ? `<div id = "tr-nav-forward" class = "div-btn">🡢</div>` : ""}
+        <!-- <div id = "abcdex"> C </div> -->
+        <div id = "tr-bank-controls"></div>
+      </div>
+    </div>`
+  let postHtml = `<div class="translate-results">
+      Loading data...
+    </div>`
+
+  panelSetUp(preHtml, postHtml)
+
+  var showBank = $('<img>', { src: chrome.runtime.getURL('images/bank_show.png'), id: 'tr-show-bank', class: 'tr-bank' });
+  $(".translate-panel-control").append(showBank)
+  showBank.on('click', function() {
+    showWordbankPanel()  
+  });
+
+  translationPanel.querySelector('#tr-nav-back')?.addEventListener("click", () => sendQuery(tr_data.history.pref[tr_data.history.pref.length - 1], "BACK"))
+  translationPanel.querySelector('#tr-nav-forward')?.addEventListener("click", () => sendQuery(tr_data.history.suff[0], "FORWARD"))
+  //TESTING  translationPanel.querySelector('#abcdex').addEventListener("click", () => chrome.storage.local.set({'history': null}))
 
   let DOMresults = document.querySelector(".translate-results")
   let DOMheader = document.querySelector(".translate-selectedText")
@@ -104,7 +123,7 @@ function showTranslationPanel(loading = false) {
 
   if(tr_data.HSK_levels){
     let $DOM_HSK = $('<div></div>').addClass('tr-HSK-Lvl').text(`HSK ${tr_data.HSK_levels}`);
-    $(container).prepend($DOM_HSK)
+    $(translationPanel).prepend($DOM_HSK)
   }
   DOMresults.innerHTML = ""
 
@@ -170,11 +189,6 @@ function showTranslationPanel(loading = false) {
 
   makeExploreBar(DOMresults, exploreChildren, exploreTitles)
   addWordBankControl();  //async
-
-
-  translationPanel.setAttribute('tabindex', 0);
-  translationPanel.focus()
-
 }
 
 function closeTranslationPanel() {
@@ -185,6 +199,32 @@ function closeTranslationPanel() {
 
   translationPanel.remove();
   translationPanel = null;
+}
+
+async function showWordbankPanel(){ 
+  let postHtml = 
+  `
+    <div class="wordbank">
+      <h3>Word Bank</h3>
+      <div id = 'wordbank-grid'>  
+        <div id = 'wordbank-wordlist'></div>
+        <div id = 'wordbank-content'></div>
+      </div>
+    </div>
+  `
+  panelSetUp('', postHtml)
+  
+  const res = await chrome.storage.local.get('wordbank');
+  const bank = Object.keys(res.wordbank) || {};
+
+  var wordListContainer = $('#wordbank-wordlist')
+  bank.forEach((term) => {
+    wordListContainer.append($('<div>', { class: 'wordbank-wordlist-row', text: term}))
+  })
+
+  //get data to populate 
+  chrome.runtime.sendMessage({action: "translate-basic-request", text: bank[0]})
+
 }
 
 function resizeWindow(change){
@@ -233,8 +273,8 @@ async function addWordBankControl(){
   const res = await chrome.storage.local.get('wordbank');
   const bank = res.wordbank || {};
 
-  var deleteWord = $('<img>', { src: chrome.runtime.getURL('images/bank_delete.png'), id: 'tr-delete-bank', class: 'tr-update-bank' });
-  var addWord = $('<img>', { src: chrome.runtime.getURL('images/bank_add.png'), id: 'tr-add-bank', class: 'tr-update-bank' });
+  var deleteWord = $('<img>', { src: chrome.runtime.getURL('images/bank_delete.png'), id: 'tr-delete-bank', class: 'tr-bank' });
+  var addWord = $('<img>', { src: chrome.runtime.getURL('images/bank_add.png'), id: 'tr-add-bank', class: 'tr-bank' });
 
   deleteWord.on("mouseleave", ()=>{deleteWord.removeClass('tr-bank-delete-confirm')})
   deleteWord.on("click", async () => {
@@ -265,7 +305,6 @@ async function addWordBankControl(){
 
   container.append(deleteWord);
   container.append(addWord);
-
 
   bank[tr_data.text] ? addWord.addClass('tr-hide') : deleteWord.addClass('tr-hide')
   

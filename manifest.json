@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Translate Buddy",
-  "version": "1.2",
+  "version": "1.2.1",
   "description": "Translate with context.",
   "permissions": [
     "storage", 
@@ -29,12 +29,12 @@
     {
       "matches": ["<all_urls>"],
       "js": ["content.js", "jquery.min.js"],
-      "css": ["styles.css"]
+      "css": ["styles.css", "wordbank.css"]
     }
   ],
   "web_accessible_resources": [
     {
-      "resources": ["styles.css", "cedict.json", "images/bank_add.png", "images/bank_delete.png"],
+      "resources": ["styles.css", "cedict.json", "images/bank_add.png", "images/bank_delete.png", "images/bank_show.png"],
       "matches": ["<all_urls>"]
     }
   ]

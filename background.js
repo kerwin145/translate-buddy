@@ -14,8 +14,11 @@ chrome.runtime.onInstalled.addListener(() => {
 
 chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
   if (request.action === "translate") {
-    handleTranslate(request.text, sender.tab.id, request.updateHistoryAction)
+    processTranslation(request.text, sender.tab.id, request.updateHistoryAction)
   } 
+  if (request.action === "translate-basic-request"){
+    processTranslationBasic(request.text,  sender.tab.id)
+  }
   else if(request.action === "setCache"){
     updateCache(request.data.key, request.data.value)
   }
@@ -24,11 +27,11 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
 chrome.contextMenus.onClicked.addListener((info, tab) => {
   if (info.menuItemId === "translate" && info.selectionText) {
     // console.log(tab)
-    handleTranslate(info.selectionText, tab.id)
+    processTranslation(info.selectionText, tab.id)
   }
 });
 
-async function handleTranslate(text, tabId, updateHistoryAction = "NEW"){
+async function loadDictionaryData(text, tabId){
   if(!dictionaryData){  
     chrome.tabs.sendMessage(tabId, { action: "showLoadingPanel", data: {text}});
     const res = await fetch(chrome.runtime.getURL('cedict.json'))
@@ -37,14 +40,14 @@ async function handleTranslate(text, tabId, updateHistoryAction = "NEW"){
     buildIndexedDictionary(); 
     buildInvertedIndex()
   }
-
-  await processTranslation(text, tabId, updateHistoryAction) 
 }
 
-async function processTranslation(text, tabId, updateHistoryAction){
+async function processTranslation(text, tabId, updateHistoryAction = "NEW"){
+  await loadDictionaryData(text, tabId)
+
   text = text.replace(/\s/g, "")
   const sentenceQuery = `https://www.purpleculture.net/sample_sentences/?word=${text}`
-  let targetEntries = dictionaryData.filter(x => x.simplified === text || x.traditional === text)
+  let targetEntries = searchWordAndProcessHSK(text)
 
   tr_data = {text: "", HSK_levels: null, page: null, entries: [], compounds: [], subCompounds: [], strokeImgUrl: "", sentenceData: null, sentenceQuery, history: null}
   tr_data.text = text;
@@ -54,13 +57,7 @@ async function processTranslation(text, tabId, updateHistoryAction){
   tr_data.subCompounds = searchSubCompounds(text) 
   tr_data.strokeImgUrl = `https://www.strokeorder.com/assets/bishun/guide/${text.charCodeAt(0)}.png`
 
-  let levels = []
-  targetEntries.forEach(entry => {
-    if(entry.HSK_level != null && !levels.some(x => x === entry.HSK_level)) levels.push(entry.HSK_level)
-  });
-  levels = levels.sort((a,b) => a-b)
-  tr_data.HSK_levels = levels.join(", ")
-
+  
   if(text.length === 1)
     tr_data.strokeImgUrl = `https://www.strokeorder.com/assets/bishun/guide/${text.charCodeAt(0)}.png`
 
@@ -86,13 +83,31 @@ async function processTranslation(text, tabId, updateHistoryAction){
   } catch (e) {console.log(e)}
 }
 
+async function processTranslationBasic(text, tabId){
+  await loadDictionaryData(text, tabId)
+
+  text = text.replace(/\s/g, "")
+  const sentenceQuery = `https://www.purpleculture.net/sample_sentences/?word=${text}`
+  let targetEntries = searchWordAndProcessHSK(text)
+
+  tr_data = {text: "", HSK_levels: null, page: null, entries: [], compounds: [], subCompounds: [], strokeImgUrl: "", sentenceData: null, sentenceQuery, history: null}
+  tr_data.text = text;
+  tr_data.page = 0;
+  tr_data.entries = sortEntries(targetEntries, true)
+  tr_data.compounds = sortEntries(searchAdjWords(text))
+  chrome.tabs.sendMessage(tabId, { action: "translate-basic-response", data: tr_data });
+}
+
 async function updateHistory(text, updateHistoryAction){
   const res = await chrome.storage.local.get('history')
   const history = res.history || { entries: [], idx: 0 };
   let { idx, entries } = history;
 
   if(updateHistoryAction === "BACK" && idx > 0){
-    idx -= 1
+    if(text === entries[idx])
+      idx -= 2
+    else
+      idx -= 1
   }
   else if(updateHistoryAction === "FORWARD" && idx < entries.length)
     idx += 1
@@ -152,6 +167,17 @@ function buildIndexedDictionary(){
   }
   console.timeEnd('buildIndexedDictionaryTimer');
   console.log(`${dictionaryDataIndexed.size} keys in indexed dictionary`)
+}
+
+function searchWordAndProcessHSK(text){
+  let entries = dictionaryData.filter(x => x.simplified === text || x.traditional === text)
+  let levels = []
+  entries.forEach(entry => {
+    if(entry.HSK_level != null && !levels.some(x => x === entry.HSK_level)) levels.push(entry.HSK_level)
+  });
+  levels = levels.sort((a,b) => a-b)
+  tr_data.HSK_levels = levels.join(", ")
+  return entries
 }
 
 function searchAdjWords(word){
