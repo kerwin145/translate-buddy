@@ -4,37 +4,58 @@ let translationPanel = null;
 let sentencesOnlyWords = false; //variable to toggle for showing only words in sentences tab
 let windowSize = 0;
 
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (message.action === "showTranslationPanel") {
-    tr_data = message.data
-    showTranslationPanel()
-  }
-  else if (message.action === "showLoadingPanel"){
-    tr_data = message.data
-    showTranslationPanel(true)
-  } 
-  else if (message.action === "loadSentences"){
-    if(message.isCached){
-      tr_data.sentenceData = processSentenceData(message.data)
-    }else{
-      let $html = $(message.data);
-      const table = $html.find('.table').text();
-      tr_data.sentenceData = processSentenceData(table)
-      chrome.runtime.sendMessage({action: "setCache", data: {key: tr_data.text, value: table}}) //we store table rather than the processed data b/c table is smaller, and processing won't take too long
+let sesssionEventQueue = []
+let queueProcessing = false
+function processEventQueue(){
+
+  while(sesssionEventQueue.length > 0){
+    let event = sesssionEventQueue.shift()
+    let {action, data} = event
+
+    switch(action){
+      case "showLoadingPanel":
+        tr_data = data
+        showTranslationPanel(true)
+        break
+      case "showTranslationPanel":
+        tr_data = data
+        showTranslationPanel()
+        break
+      case "loadSentences":
+        if(event.isCached){
+          tr_data.sentenceData = processSentenceData(data)
+        }else{
+          let $html = $(data);
+          const table = $html.find('.table').text();
+          tr_data.sentenceData = processSentenceData(table)
+          chrome.runtime.sendMessage({action: "setCache", data: {key: tr_data.text, value: table}}) //we store table rather than the processed data b/c table is smaller, and processing won't take too long
+        }
+        processSentences(tr_data.sentenceData, tr_data.sentenceQuery)
+        break
+      case "translate-basic-response":
+        let targetElement = $("#wordbank-content")
+        if(targetElement){
+          tr_data = data
+          console.log(tr_data)
+          targetElement.text(tr_data.entries[0].definitions) 
+        }
+        break
+      default: 
+        console.log("I don't know...! ;-;")
     }
-    processSentences(tr_data.sentenceData, tr_data.sentenceQuery)
-  }else if (message.action === "translate-basic-response"){
-    let targetElement = $("#wordbank-content")
-    if(targetElement){
-      tr_data = message.data
-      console.log(tr_data)
-      targetElement.text(tr_data.entries[0].definitions)
+  }
+
+  queueProcessing = false
+}
+
+chrome.storage.session.onChanged.addListener(
+  (changes) => {
+    sesssionEventQueue.push(changes.data.newValue)
+    if(!queueProcessing){
+      queueProcessing = true
+      processEventQueue()
     }
-  }
-  else{
-    alert(` :(Some unknown messsage:  ${message.action}`)
-  }
-});
+  });
 
 //check history could be "BACK" "FORWARD" or null
 function sendQuery(text, updateHistoryAction = "NEW"){
@@ -79,6 +100,7 @@ function panelSetUp(preHtml, postHtml){
 }
 
 function showTranslationPanel(loading = false) {
+  let historyEmpty = tr_data.history?.pref.length == 0 && tr_data.history?.suff.length == 0
   let preHtml = `<h2 class = "translate-selectedText">${tr_data.text || ""}</h2>
     <div class = "translate-panel-nav-wrapper">
       <p> ☰ </p>
@@ -86,7 +108,7 @@ function showTranslationPanel(loading = false) {
         ${tr_data.history?.pref.length > 0 ? `<div id = "tr-nav-back" class = "div-btn">🡠</div>` : ""}
         ${tr_data.history?.suff.length > 0 ? `<div id = "tr-nav-forward" class = "div-btn">🡢</div>` : ""}
         <!-- <div id = "abcdex"> C </div> -->
-        <div id = "tr-bank-controls"></div>
+        <div id = "tr-bank-controls" ${historyEmpty ? `class = "tr-no-border"` : ""}></div>
       </div>
     </div>`
   let postHtml = `<div class="translate-results">
@@ -115,9 +137,16 @@ function showTranslationPanel(loading = false) {
 
   if (tr_data.entries.length == 0){
     DOMheader.innerHTML = trimText(tr_data.text)
+
+    let DOMcompounds = document.createElement('div')
+    DOMcompounds.className = 'translate-compounds-container'
+
     DOMresults.innerHTML = `<div class = "translate-noresults"> Not in my dictionary, sorry! :-( </div>`
-    makeCompoundListHTML(DOMresults, tr_data.compounds, `Compounds using ${trimText(tr_data.text)}`, `No compound words using ${trimText(tr_data.text)} found!`)
-    makeCompoundListHTML(DOMresults, tr_data.subCompounds, `Compounds used in ${trimText(tr_data.text)}`, `No compound words used in ${trimText(tr_data.text)} found!`, true)
+    if(tr_data.text.length > 2)
+      makeCompoundListHTML(DOMcompounds, tr_data.subCompounds, `Compounds used in ${trimText(tr_data.text)}`, `No compound words used in ${trimText(tr_data.text)} found!`, true)
+    makeCompoundListHTML(DOMcompounds, tr_data.compounds, `Compounds using ${trimText(tr_data.text)}`, `No compound words using ${trimText(tr_data.text)} found!`)
+    
+    DOMresults.appendChild(DOMcompounds)
     return
   }
 
@@ -125,6 +154,7 @@ function showTranslationPanel(loading = false) {
     let $DOM_HSK = $('<div></div>').addClass('tr-HSK-Lvl').text(`HSK ${tr_data.HSK_levels}`);
     $(translationPanel).prepend($DOM_HSK)
   }
+
   DOMresults.innerHTML = ""
 
   let {simplified, traditional, pinyin, definitions} = tr_data.entries[tr_data.page]
@@ -149,19 +179,25 @@ function showTranslationPanel(loading = false) {
     DOMheader.classList.add('tranlsate-fontsmall')
   }
 
-  const DOMdefinitions = document.createElement('ul')
-  DOMdefinitions.classList = "translation-definitions"
-  for(const d of definitions) DOMdefinitions.innerHTML += `<li>${d}</li>`
-
-  DOMresults.insertAdjacentHTML("beforeend", `<h3>Definitions</h3>`)
-  DOMresults.appendChild(DOMdefinitions)
+  const $DOMdefinitions = $('<div></div>').addClass('translation-definitions');
+  const $DOMdefinitionsList =  $('<ul></ul>')
+  $.each(definitions, function(index, d) {
+      $DOMdefinitionsList.append(`<li>${d}</li>`);
+  });
+  $DOMdefinitions.append($('<h3></h3>').text("Definitions"))
+  $DOMdefinitions.append($DOMdefinitionsList)
+  $(DOMresults).append($DOMdefinitions)
     
   if(tr_data.entries.length > 1)
     makeNavChip(DOMresults)
 
-  makeCompoundListHTML(DOMresults, tr_data.compounds, `Compounds using ${trimText(tr_data.text)}`, `No compound words using ${trimText(tr_data.text)} found!`)
+  let DOMcompounds = document.createElement('div')
+  DOMcompounds.className = 'translate-compounds-container'
+
   if(tr_data.text.length > 2)
-    makeCompoundListHTML(DOMresults, tr_data.subCompounds, `Compounds used in ${trimText(tr_data.text)}`, `No compound words used in ${trimText(tr_data.text)} found!`, true)
+    makeCompoundListHTML(DOMcompounds, tr_data.subCompounds, `Compounds used in ${trimText(tr_data.text)}`, `No compound words used in ${trimText(tr_data.text)} found!`, true)
+  makeCompoundListHTML(DOMcompounds, tr_data.compounds, `Compounds using ${trimText(tr_data.text)}`, `No compound words using ${trimText(tr_data.text)} found!`)
+  DOMresults.appendChild(DOMcompounds)
 
   const DOMstrokeOrderContainer = document.createElement('a')
   DOMstrokeOrderContainer.setAttribute("href", `https://www.strokeorder.com/chinese/${tr_data.text}`)
@@ -202,28 +238,39 @@ function closeTranslationPanel() {
 }
 
 async function showWordbankPanel(){ 
+
+  const res = await chrome.storage.local.get('wordbank');
+  console.log(res)
+  let bank = []
+  if(res && res.wordbank){
+    bank = Object.keys(res.wordbank)
+  }
+
   let postHtml = 
   `
-    <div class="wordbank">
+    <div id ="tr-wordbank">
       <h3>Word Bank</h3>
       <div id = 'wordbank-grid'>  
-        <div id = 'wordbank-wordlist'></div>
-        <div id = 'wordbank-content'></div>
+        ${bank.length == 0 ?
+         `<div><br> No terms saved to your word bank ... yet! </div>`
+          :
+          `<div id = 'wordbank-wordlist'></div>
+          <div id = 'wordbank-content'>`
+        }
+        </div>
       </div>
     </div>
   `
   panelSetUp('', postHtml)
-  
-  const res = await chrome.storage.local.get('wordbank');
-  const bank = Object.keys(res.wordbank) || {};
-
   var wordListContainer = $('#wordbank-wordlist')
-  bank.forEach((term) => {
-    wordListContainer.append($('<div>', { class: 'wordbank-wordlist-row', text: term}))
+  bank.forEach((term, idx) => {
+    wordListContainer.append($('<div>', { class: `wordbank-wordlist-row ${idx == 0 ? "tr-wordbank-selected" : ""}`, text: term}))
   })
 
-  //get data to populate 
-  chrome.runtime.sendMessage({action: "translate-basic-request", text: bank[0]})
+  if(bank.length > 0){
+    //get data to populate 
+    chrome.runtime.sendMessage({action: "translate-basic-request", text: bank[0]})
+  }
 
 }
 
@@ -248,11 +295,15 @@ function resizeWindow(change){
     DOMsize_decrease.className = ""
     translationPanel.classList.add("translation-panel-expand-2")
   }
+
+  if(windowSize > 0){
+    let height = $('.translation-definitions').outerHeight() + $('translation-explore').outerHeight()
+    $('.translate-compounds-container').css('max-height', height);
+  }
 }
 
 function handleOutsideClick(event) {
   if (translationPanel && !translationPanel.contains(event.target)) {
-
     closeTranslationPanel();
   }
 }
@@ -403,7 +454,6 @@ function makeCompoundListHTML(parent, compounds, blockTitle, blockNoResultsText,
   if(compounds.length == 0){
     if(displayMode)
       return
-    DOMcompounds.className = "translate-compounds"
     DOMcompounds.innerHTML = blockNoResultsText
     DOMcompounds.classList.add('translate-no-compounds')
     return

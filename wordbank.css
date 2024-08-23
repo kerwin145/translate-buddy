@@ -1,8 +1,22 @@
+.tr-wordbank-selected{
+    font-weight: bold;
+}
+
 #wordbank-grid{
     display: grid;
-    grid-template-columns: 1fr 3fr;
+    grid-template-columns: auto 1fr;
+    gap: 12px;
+    margin-right: .85em;
+}
+
+#tr-wordbank h3{
+    margin-bottom: 8px;
 }
 
 #wordbank-wordlist{
-    
+    display: flex;
+    flex-direction: column;
+    gap: .5em;
+    border-right: 1px solid rgba(0,0,0,.5);
+    padding-right: 12px;
 }

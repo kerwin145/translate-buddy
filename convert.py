@@ -79,6 +79,7 @@ def parse_cedict_line(line):
         definitions[i] = re.sub(pattern_sth, "something", definitions[i])
         definitions[i] = re.sub(pattern_sb, "somebody", definitions[i])
         definitions[i] = re.sub(r"CL:", "Measure word: ", definitions[i])
+        definitions[i] = re.sub(r"\(derog.\)", "(derogatory)", definitions[i])
 
     for char in simplified:
         if isValidChar(char):

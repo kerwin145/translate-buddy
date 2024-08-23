@@ -14,26 +14,25 @@ chrome.runtime.onInstalled.addListener(() => {
 
 chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
   if (request.action === "translate") {
-    processTranslation(request.text, sender.tab.id, request.updateHistoryAction)
+    processTranslation(request.text, request.updateHistoryAction)
   } 
   if (request.action === "translate-basic-request"){
-    processTranslationBasic(request.text,  sender.tab.id)
+    processTranslationBasic(request.text)
   }
   else if(request.action === "setCache"){
     updateCache(request.data.key, request.data.value)
   }
 });
 
-chrome.contextMenus.onClicked.addListener((info, tab) => {
+chrome.contextMenus.onClicked.addListener(async (info, tab) => {
   if (info.menuItemId === "translate" && info.selectionText) {
-    // console.log(tab)
-    processTranslation(info.selectionText, tab.id)
+    processTranslation(info.selectionText)
   }
 });
 
-async function loadDictionaryData(text, tabId){
+async function loadDictionaryData(text){
   if(!dictionaryData){  
-    chrome.tabs.sendMessage(tabId, { action: "showLoadingPanel", data: {text}});
+    await chrome.storage.session.set({data: {action: "showLoadingPanel", data: {text}}})
     const res = await fetch(chrome.runtime.getURL('cedict.json'))
     const data = await res.json()
     dictionaryData = data; 
@@ -42,8 +41,8 @@ async function loadDictionaryData(text, tabId){
   }
 }
 
-async function processTranslation(text, tabId, updateHistoryAction = "NEW"){
-  await loadDictionaryData(text, tabId)
+async function processTranslation(text, updateHistoryAction = "NEW"){
+  await loadDictionaryData(text)
 
   text = text.replace(/\s/g, "")
   const sentenceQuery = `https://www.purpleculture.net/sample_sentences/?word=${text}`
@@ -63,8 +62,7 @@ async function processTranslation(text, tabId, updateHistoryAction = "NEW"){
 
   tr_data.history = await updateHistory(text, targetEntries.length == 0 ? "NONE" : updateHistoryAction)
 
-  chrome.tabs.sendMessage(tabId, { action: "showTranslationPanel", data: tr_data });
-
+  await chrome.storage.session.set({data: {action: "showTranslationPanel", data: tr_data}})
   if(targetEntries.length == 0)
     return
 
@@ -73,18 +71,18 @@ async function processTranslation(text, tabId, updateHistoryAction = "NEW"){
     let data = await queryCache(text)
     if(data){
       console.log("Hit sentence cache :o")
-      chrome.tabs.sendMessage(tabId, { action: "loadSentences", data, isCached: true });
+      await chrome.storage.session.set({data: { action: "loadSentences", data, isCached: true }})
     }else{
       console.log("Missed sentence cache :(")
       let sentenceData = await fetch(sentenceQuery)
       let html = await sentenceData.text()
-      chrome.tabs.sendMessage(tabId, { action: "loadSentences", data: html, isCached: false});
+      await chrome.storage.session.set({data: { action: "loadSentences", data: html, isCached: false}})
     }
   } catch (e) {console.log(e)}
 }
 
-async function processTranslationBasic(text, tabId){
-  await loadDictionaryData(text, tabId)
+async function processTranslationBasic(text){
+  await loadDictionaryData(text)
 
   text = text.replace(/\s/g, "")
   const sentenceQuery = `https://www.purpleculture.net/sample_sentences/?word=${text}`
@@ -95,7 +93,7 @@ async function processTranslationBasic(text, tabId){
   tr_data.page = 0;
   tr_data.entries = sortEntries(targetEntries, true)
   tr_data.compounds = sortEntries(searchAdjWords(text))
-  chrome.tabs.sendMessage(tabId, { action: "translate-basic-response", data: tr_data });
+  await chrome.storage.session.set({data: { action: "translate-basic-response", data: tr_data }})
 }
 
 async function updateHistory(text, updateHistoryAction){
