@@ -240,12 +240,6 @@
   max-height: 80vh;
 }
 
-.translate-results ul{
-  font-size: 1em;
-  margin: 0;
-  padding: 0;
-  padding-left: .25em;
-}
 .translate-header{
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -273,6 +267,13 @@
   max-height: 16vh;
   overflow: auto;
   margin-bottom: 8px;
+}
+
+#translation-panel ul{
+  font-size: 1em;
+  margin: 0;
+  padding: 0;
+  padding-left: .25em;
 }
 
 #translation-panel ul li{

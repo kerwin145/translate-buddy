@@ -2,21 +2,92 @@
     font-weight: bold;
 }
 
+#tr-wordbank button{
+    background-color: transparent;
+    border: none;
+    padding: 0;
+    margin: 0;
+    line-height: 1;
+    font-size: 1em;
+    cursor: pointer;
+}
+
 #wordbank-grid{
     display: grid;
     grid-template-columns: auto 1fr;
-    gap: 12px;
+    gap: 16px;
     margin-right: .85em;
 }
 
 #tr-wordbank h3{
-    margin-bottom: 8px;
+    margin-bottom: 16px;
+    margin-right: 32px;
+    border-bottom: 1px solid rgba(0,0,0,.25);
 }
 
 #wordbank-wordlist{
     display: flex;
     flex-direction: column;
-    gap: .5em;
-    border-right: 1px solid rgba(0,0,0,.5);
+    gap: 1em;
+    /* border-right: 1px solid rgba(0,0,0,.5); */
     padding-right: 12px;
+    max-width: 6em;
+    max-height: 65vh;
+    overflow: auto;
+    padding-bottom: 1px;
+}
+
+.wordbank-delete{
+    line-height: 1;
+    margin-top: 4px;
+    text-align: end;
+    font-size: .7em;
+    cursor: pointer;
+    color: gray;
+}
+
+.wordbank-delete-confirm {
+    animation: flash 2.5s ease-in-out infinite;
+}
+
+#word-bank-back{
+    padding: 0 8px;
+    opacity: 100%;
+    width: fit-content;
+    height: fit-content;
+    display: flex;
+    gap: .5em;
+    flex-direction: column;
+    line-height: 1;
+    cursor: pointer;
+}
+
+@keyframes flash {
+    0%, 100% { 
+        opacity: 1; 
+    }
+    50% { 
+        opacity: .5;
+    }
+}
+
+#wordbank-wordlist::-webkit-scrollbar{
+    width: 8px;
+    margin-left: -8px;
+}
+
+#wordbank-wordlist::-webkit-scrollbar:hover{
+    cursor: pointer;
+}
+
+#wordbank-wordlist::-webkit-scrollbar-thumb{
+    background: rgb(192,192,192);
+    border-radius: 4px;
+    opacity: 85%;
+}
+
+#wordbank-wordlist::-webkit-scrollbar-track{
+    border-radius: 10px;
+    background: rgb(232,232,232);
+    opacity: 85%;
 }

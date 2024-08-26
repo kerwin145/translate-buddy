@@ -3,9 +3,11 @@ let tr_data; //data format is defined in background.js
 let translationPanel = null;
 let sentencesOnlyWords = false; //variable to toggle for showing only words in sentences tab
 let windowSize = 0;
+let previousSearchTerm = "" //set in showTranslationPanel for wordbank back button to work
 
 let sesssionEventQueue = []
 let queueProcessing = false
+
 function processEventQueue(){
 
   while(sesssionEventQueue.length > 0){
@@ -32,13 +34,13 @@ function processEventQueue(){
         }
         processSentences(tr_data.sentenceData, tr_data.sentenceQuery)
         break
+      case "showLoadingPanelBasic":
+        let $targetElementLoading = $("#wordbank-content")
+        $targetElementLoading.text("Loading up dictionary data...")
+        break
       case "translate-basic-response":
-        let targetElement = $("#wordbank-content")
-        if(targetElement){
-          tr_data = data
-          console.log(tr_data)
-          targetElement.text(tr_data.entries[0].definitions) 
-        }
+        tr_data = data
+        loadWordBankPanel(data)
         break
       default: 
         console.log("I don't know...! ;-;")
@@ -48,6 +50,14 @@ function processEventQueue(){
   queueProcessing = false
 }
 
+document.addEventListener('keydown', (event) => {
+  if (event.ctrlKey && event.altKey && event.key === 'n') {
+    const selectedText = window.getSelection().toString();
+    if(selectedText){
+      sendQuery(selectedText)
+    }
+  }
+});
 chrome.storage.session.onChanged.addListener(
   (changes) => {
     sesssionEventQueue.push(changes.data.newValue)
@@ -78,7 +88,7 @@ function panelSetUp(preHtml, postHtml){
         <div class="tr-close-btn" title = "Close">&times;</div>
         <div class = "tr-resize-control">
           <div id="tr-size-increase-btn" class = "${windowSize === 2 ? " tr-hide" : ""}" title = "Enlarge window (shortcut: =)">&#128474;</div>
-          <div id="tr-size-decrease-btn" class = "${windowSize === 0 ? " tr-hide" : ""} title = "Reduce window (shortcut: -)">&#128475;</div>
+          <div id="tr-size-decrease-btn" class = "${windowSize === 0 ? " tr-hide" : ""}" title = "Reduce window (shortcut: -)">&#128475;</div>
         </div>
     </div>
   `
@@ -93,6 +103,7 @@ function panelSetUp(preHtml, postHtml){
   translationPanel.addEventListener('keydown', (e)=>{
     if (e.key === '=') resizeWindow(1)
     else if (e.key === '-') resizeWindow(-1)
+    else if (e.key === 'd') showWordbankPanel()
   })
 
   translationPanel.setAttribute('tabindex', 0);
@@ -100,7 +111,9 @@ function panelSetUp(preHtml, postHtml){
 }
 
 function showTranslationPanel(loading = false) {
-  let historyEmpty = tr_data.history?.pref.length == 0 && tr_data.history?.suff.length == 0
+  previousSearchTerm = tr_data.text
+  let historyEmpty = (!tr_data.history) || (tr_data.history.pref.length == 0 && tr_data.history.suff.length == 0)
+
   let preHtml = `<h2 class = "translate-selectedText">${tr_data.text || ""}</h2>
     <div class = "translate-panel-nav-wrapper">
       <p> ☰ </p>
@@ -117,7 +130,7 @@ function showTranslationPanel(loading = false) {
 
   panelSetUp(preHtml, postHtml)
 
-  var showBank = $('<img>', { src: chrome.runtime.getURL('images/bank_show.png'), id: 'tr-show-bank', class: 'tr-bank' });
+  var showBank = $('<img>', { src: chrome.runtime.getURL('images/bank_show.png'), id: 'tr-show-bank', class: 'tr-bank', title: "Show word bank (shortcut: d)" });
   $(".translate-panel-control").append(showBank)
   showBank.on('click', function() {
     showWordbankPanel()  
@@ -238,13 +251,20 @@ function closeTranslationPanel() {
 }
 
 async function showWordbankPanel(){ 
+  chrome.runtime.sendMessage({action: "kill-translation"})
 
   const res = await chrome.storage.local.get('wordbank');
-  console.log(res)
   let bank = []
   if(res && res.wordbank){
     bank = Object.keys(res.wordbank)
   }
+
+  let preHtml = 
+  `  
+    <div class = "translate-panel-nav-wrapper">
+      <div id = "word-bank-back" class = "div-btn">🡠</div>
+    </div>
+  `
 
   let postHtml = 
   `
@@ -252,19 +272,30 @@ async function showWordbankPanel(){
       <h3>Word Bank</h3>
       <div id = 'wordbank-grid'>  
         ${bank.length == 0 ?
-         `<div><br> No terms saved to your word bank ... yet! </div>`
+         `<div>No terms saved to your word bank ... yet! </div>`
           :
           `<div id = 'wordbank-wordlist'></div>
-          <div id = 'wordbank-content'>`
+          <div id = 'wordbank-content'> Loading up dictionary data... </div>`
         }
         </div>
       </div>
     </div>
   `
-  panelSetUp('', postHtml)
+  panelSetUp(previousSearchTerm.length > 0 ? preHtml : "", postHtml)
+
+  $('#word-bank-back').on('click', ()=>{sendQuery(previousSearchTerm)})
+
+  if(bank.length == 0) return
+
   var wordListContainer = $('#wordbank-wordlist')
   bank.forEach((term, idx) => {
-    wordListContainer.append($('<div>', { class: `wordbank-wordlist-row ${idx == 0 ? "tr-wordbank-selected" : ""}`, text: term}))
+    let $button = $('<button>', { class: `wordbank-wordlist-row ${idx == 0 ? "tr-wordbank-selected" : ""}`, text: term})
+    wordListContainer.append($button)
+    $button.on('click', ()=>{
+      chrome.runtime.sendMessage({action: "translate-basic-request", text: term})
+      $('.wordbank-wordlist-row').removeClass('tr-wordbank-selected')
+      $button.addClass("tr-wordbank-selected")
+    })
   })
 
   if(bank.length > 0){
@@ -272,6 +303,48 @@ async function showWordbankPanel(){
     chrome.runtime.sendMessage({action: "translate-basic-request", text: bank[0]})
   }
 
+}
+
+function loadWordBankPanel(data){
+  let $targetElement = $("#wordbank-content")
+  if($targetElement){
+    let $definitions = $('<div></div>')
+    $.each(tr_data.entries, (idx, entry) => {
+      $definitions.append($('<div style = "line-height: 1; margin-bottom: 4px" ></div>').text(entry.pinyin))
+      let $def = $('<ul></ul>')
+      $.each(entry.definitions, (idx, d) => {
+        $def.append($('<li></li>').text(d))
+      })
+
+      $definitions.append($def)
+      if(idx < tr_data.entries.length - 1)
+        $definitions.append($('<br>'))
+    })
+    $targetElement.text('')
+    $targetElement.append($definitions)
+
+    let $deleteTerm = $('<div></div>', {class: 'wordbank-delete', text: 'Remove'})
+    $deleteTerm.on('click', async ()=>{
+      if($deleteTerm.hasClass('wordbank-delete-confirm')){
+        const res = await chrome.storage.local.get('wordbank');
+        const bank = res.wordbank || {};
+        delete bank[data.text];
+        await chrome.storage.local.set({ wordbank: bank });
+        showWordbankPanel()
+      }else{
+        $deleteTerm.addClass('wordbank-delete-confirm')
+        $deleteTerm.text('Remove term? (Click again to confirm)')
+      }
+    })
+
+    $deleteTerm.on('mouseleave', ()=>{
+      $deleteTerm.removeClass('wordbank-delete-confirm')
+      $deleteTerm.text('Remove')
+    })
+
+    $targetElement.append($deleteTerm)
+    // targetElement.text(tr_data.entries[0].definitions) 
+  }
 }
 
 function resizeWindow(change){
@@ -296,7 +369,7 @@ function resizeWindow(change){
     translationPanel.classList.add("translation-panel-expand-2")
   }
 
-  if(windowSize > 0){
+  if(windowSize > 0 && $('.translation-definitions')){
     let height = $('.translation-definitions').outerHeight() + $('translation-explore').outerHeight()
     $('.translate-compounds-container').css('max-height', height);
   }
@@ -324,10 +397,12 @@ async function addWordBankControl(){
   const res = await chrome.storage.local.get('wordbank');
   const bank = res.wordbank || {};
 
-  var deleteWord = $('<img>', { src: chrome.runtime.getURL('images/bank_delete.png'), id: 'tr-delete-bank', class: 'tr-bank' });
-  var addWord = $('<img>', { src: chrome.runtime.getURL('images/bank_add.png'), id: 'tr-add-bank', class: 'tr-bank' });
+  var deleteWord = $('<img>', { src: chrome.runtime.getURL('images/bank_delete.png'), id: 'tr-delete-bank', class: 'tr-bank', title: "Delete from word bank (click twice to confirm)" });
+  var addWord = $('<img>', { src: chrome.runtime.getURL('images/bank_add.png'), id: 'tr-add-bank', class: 'tr-bank', title: "Add term to word bank" });
 
-  deleteWord.on("mouseleave", ()=>{deleteWord.removeClass('tr-bank-delete-confirm')})
+  deleteWord.on("mouseleave", ()=>{
+    deleteWord.removeClass('tr-bank-delete-confirm')
+  })
   deleteWord.on("click", async () => {
     if(!deleteWord.hasClass("tr-bank-delete-confirm")){
       deleteWord.addClass("tr-bank-delete-confirm")
@@ -351,7 +426,6 @@ async function addWordBankControl(){
     await chrome.storage.local.set({ wordbank: bank });
     deleteWord.toggleClass('tr-hide')
     addWord.toggleClass('tr-hide')
-    console.log(bank)
   });
 
   container.append(deleteWord);

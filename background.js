@@ -3,6 +3,7 @@ tr_data = {text: "", HSK_levels: null, page: null, entries: [], compounds: [], s
 const invertedIndex = new Map()
 let dictionaryData = null;
 let dictionaryDataIndexed = new Map() //allows O(1) retrieval where the key is the simplified word. The value is a list of entries with that key (as a single word can have multiple entries)
+let translationProcessingKilled = false
 
 chrome.runtime.onInstalled.addListener(() => {
   chrome.contextMenus.create({
@@ -14,25 +15,36 @@ chrome.runtime.onInstalled.addListener(() => {
 
 chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
   if (request.action === "translate") {
+    console.log("Recieved translate request")
+    translationProcessingKilled = false
     processTranslation(request.text, request.updateHistoryAction)
   } 
-  if (request.action === "translate-basic-request"){
+  else if (request.action === "translate-basic-request"){
     processTranslationBasic(request.text)
   }
   else if(request.action === "setCache"){
     updateCache(request.data.key, request.data.value)
+  }else if(request.action === "kill-translation"){
+    console.log("Request to kill translation recieved")
+    translationProcessingKilled = true
   }
 });
 
 chrome.contextMenus.onClicked.addListener(async (info, tab) => {
   if (info.menuItemId === "translate" && info.selectionText) {
+    translationProcessingKilled = false
     processTranslation(info.selectionText)
   }
 });
 
-async function loadDictionaryData(text){
+async function loadDictionaryData(text, basic = false){
   if(!dictionaryData){  
-    await chrome.storage.session.set({data: {action: "showLoadingPanel", data: {text}}})
+    if(!basic){
+      await chrome.storage.session.set({data: {action: "showLoadingPanel", data: {text}}})
+    }else{
+      await chrome.storage.session.set({data: {action: "showLoadingPanelBasic"}})
+    }
+
     const res = await fetch(chrome.runtime.getURL('cedict.json'))
     const data = await res.json()
     dictionaryData = data; 
@@ -61,6 +73,9 @@ async function processTranslation(text, updateHistoryAction = "NEW"){
     tr_data.strokeImgUrl = `https://www.strokeorder.com/assets/bishun/guide/${text.charCodeAt(0)}.png`
 
   tr_data.history = await updateHistory(text, targetEntries.length == 0 ? "NONE" : updateHistoryAction)
+  
+  if(translationProcessingKilled)
+    return
 
   await chrome.storage.session.set({data: {action: "showTranslationPanel", data: tr_data}})
   if(targetEntries.length == 0)
@@ -82,7 +97,7 @@ async function processTranslation(text, updateHistoryAction = "NEW"){
 }
 
 async function processTranslationBasic(text){
-  await loadDictionaryData(text)
+  await loadDictionaryData(text, true)
 
   text = text.replace(/\s/g, "")
   const sentenceQuery = `https://www.purpleculture.net/sample_sentences/?word=${text}`
@@ -117,11 +132,12 @@ async function updateHistory(text, updateHistoryAction){
     idx = entries.length 
 
   }else if(updateHistoryAction === "NONE" && idx === entries.length){ //Don't ask how I got to this, but it works. The goal is for non-result words to not impede the history
-      idx = entries.length + 1
+    idx = entries.length + 1
   }
   
   const pref = entries.slice(0, idx-1)
   const suff = updateHistoryAction === "NEW" ? [] : entries.slice(idx, entries.length)
+
   chrome.storage.local.set({ history: {entries, idx}})
 
   return {pref, suff}
