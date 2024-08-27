@@ -58,9 +58,8 @@ async function processTranslation(text, updateHistoryAction = "NEW"){
 
   text = text.replace(/\s/g, "")
   const sentenceQuery = `https://www.purpleculture.net/sample_sentences/?word=${text}`
-  let targetEntries = searchWordAndProcessHSK(text)
-
   tr_data = {text: "", HSK_levels: null, page: null, entries: [], compounds: [], subCompounds: [], strokeImgUrl: "", sentenceData: null, sentenceQuery, history: null}
+  let targetEntries = searchWordAndProcessHSK(text)
   tr_data.text = text;
   tr_data.page = 0;
   tr_data.entries = sortEntries(targetEntries, true)
@@ -68,7 +67,6 @@ async function processTranslation(text, updateHistoryAction = "NEW"){
   tr_data.subCompounds = searchSubCompounds(text) 
   tr_data.strokeImgUrl = `https://www.strokeorder.com/assets/bishun/guide/${text.charCodeAt(0)}.png`
 
-  
   if(text.length === 1)
     tr_data.strokeImgUrl = `https://www.strokeorder.com/assets/bishun/guide/${text.charCodeAt(0)}.png`
 

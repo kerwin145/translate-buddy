@@ -43,7 +43,7 @@ function processEventQueue(){
         loadWordBankPanel(data)
         break
       default: 
-        console.log("I don't know...! ;-;")
+        // console.log("I don't know...! ;-;")
     }
   }
 
@@ -158,7 +158,9 @@ function showTranslationPanel(loading = false) {
     if(tr_data.text.length > 2)
       makeCompoundListHTML(DOMcompounds, tr_data.subCompounds, `Compounds used in ${trimText(tr_data.text)}`, `No compound words used in ${trimText(tr_data.text)} found!`, true)
     makeCompoundListHTML(DOMcompounds, tr_data.compounds, `Compounds using ${trimText(tr_data.text)}`, `No compound words using ${trimText(tr_data.text)} found!`)
-    
+
+    $(".translate-results").addClass('skew-compound-container')
+
     DOMresults.appendChild(DOMcompounds)
     return
   }
@@ -381,7 +383,7 @@ function handleOutsideClick(event) {
   }
 }
 
-function trimText(text, limit = 10){
+function trimText(text, limit = 6){
   if(text.length >= limit) return text.substring(0, limit) + "..."
   return text
 }
@@ -412,7 +414,6 @@ async function addWordBankControl(){
       deleteWord.toggleClass('tr-hide')
       deleteWord.toggleClass("tr-bank-delete-confirm")
       addWord.toggleClass('tr-hide')
-      console.log(bank)
     }
 
   });
@@ -480,7 +481,10 @@ function makeExploreBar(parent, children, titles){
 
 //HTML helpers. I wish i could write this in react ;-;
 function makeNavChip(parent){
-  if(!translationPanel){console.log("Error making navchip because translation panel does not exist"); return;}
+  if(!translationPanel){
+    // console.log("Error making navchip because translation panel does not exist"); 
+    return;
+  }
 
   const DOMcontrol = document.createElement('div')
   DOMcontrol.classList.add("trans-control")
@@ -536,7 +540,7 @@ function makeCompoundListHTML(parent, compounds, blockTitle, blockNoResultsText,
   let DOMcompounds_header = document.createElement('h3')
   DOMcompounds_header.innerHTML = `${blockTitle}`
   let DOMcompounds_elements = document.createElement('div')
-  DOMcompounds_elements.className = `translate-comp-entry-container${displayMode ? " tr-maxheight-45vh" : ""}`
+  DOMcompounds_elements.className = `translate-comp-entry-container`
 
   DOMcompounds.appendChild(DOMcompounds_header)
   DOMcompounds.appendChild(DOMcompounds_elements)

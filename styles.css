@@ -3,6 +3,9 @@
   margin: 0;
 }
 
+#translation-panel :is(h1, h2, h3, h4, h5, h6) {
+  color: indigo
+}
 .tr-active{
   font-weight: bold;
 }
@@ -25,7 +28,7 @@
 }
 
 .tr-maxheight-45vh{
-  max-height: 45vh !important;
+  max-height: 45vh;
 }
 
 #translation-panel a, #translation-panel a:hover, #translation-panel a:visited{
@@ -88,6 +91,7 @@
   font-size: 1.25em;
   font-weight: normal;
   margin: 0;
+  margin-bottom: 4px;
   padding: 0;
 }
 
@@ -337,6 +341,15 @@
   flex-direction: column;
   gap: 8px;
   margin-bottom: 8px;
+  max-height: 70vh;
+}
+
+.translate-compounds-container > div:first-child{
+  max-height: calc(24vh + 4em);
+}
+
+.translate-compounds-container > div:first-child .translate-comp-entry-container{
+  max-height: 24vh;
 }
 
 .translate-compounds{
@@ -344,7 +357,7 @@
 }
 .translate-comp-entry-container{
   display: flex;
-  gap: 12px;
+  gap: .3em;
   padding-right: 2px;
   flex-wrap: wrap;
   max-height: 14vh;
@@ -574,9 +587,15 @@ opacity: 85%;
   "definitions compounds"
   "control compounds"
   "explore compounds";
-  grid-template-columns: 3fr 2fr;
   column-gap: 32px;
+  grid-template-columns: 1fr 1fr;
 }
+
+#translation-panel.translation-panel-expand .skew-compound-container, 
+#translation-panel.translation-panel-expand-2 .skew-compound-container{
+  grid-template-columns: 1fr 2fr;
+}
+
 
 #translation-panel.translation-panel-expand .translate-comp-entry-container, 
 #translation-panel.translation-panel-expand-2 .translate-comp-entry-container{
@@ -586,6 +605,7 @@ opacity: 85%;
 #translation-panel.translation-panel-expand .translate-compounds-container, 
 #translation-panel.translation-panel-expand-2 .translate-compounds-container{
   overflow: auto;
+  margin-right: .85em;
 }
 
 .tr-reduced-size-5{
@@ -644,6 +664,10 @@ opacity: 85%;
   max-width: 34vw;
 }
 
+#translation-panel.translation-panel-expand .translate-compounds, #translation-panel.translation-panel-expand-2 .translate-compounds{
+  max-height: none;
+}
+
 /* Even biggerr */
 #translation-panel.translation-panel-expand-2{
   max-width: 55vw;
@@ -661,7 +685,7 @@ opacity: 85%;
 }
 
 #translation-panel.translation-panel-expand-2 .sentences-body{
-  max-height: 40vh;
+  max-height: 35vh;
 }
 
 #translation-panel.translation-panel-expand-2 .translate-selectedText{
