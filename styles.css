@@ -1,4 +1,8 @@
 /* === Global styles === */
+#translation-panel{
+  font-family: Arial, Helvetica, sans-serif;
+}
+
 #translation-panel p{
   margin: 0;
 }
@@ -270,7 +274,7 @@
   font-size: 1em;
   max-height: 16vh;
   overflow: auto;
-  margin-bottom: 8px;
+  margin-bottom: 16px;
 }
 
 #translation-panel ul{
@@ -336,11 +340,15 @@
   text-overflow: ellipsis;
 }
 
+.translate-comp{
+  margin-bottom: .3em;
+}
+
 .translate-compounds-container{
   display: flex;
   flex-direction: column;
   gap: 8px;
-  margin-bottom: 8px;
+  margin-bottom: 16px;
   max-height: 70vh;
 }
 
@@ -457,7 +465,7 @@ opacity: 85%;
   display: flex;
   gap: 6px;
   border-bottom: 1px solid silver;
-  margin-bottom: 8px;
+  margin-bottom: 16px;
 }
 
 .translation-explore-controls button{

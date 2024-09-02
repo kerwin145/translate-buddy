@@ -9,9 +9,15 @@ let sesssionEventQueue = []
 let queueProcessing = false
 
 function processEventQueue(){
-
   while(sesssionEventQueue.length > 0){
+    console.log(document.visibilityState)
+
     let event = sesssionEventQueue.shift()
+
+    if(document.visibilityState.toLowerCase() !== "visible")
+      continue
+
+
     let {action, data} = event
 
     switch(action){
@@ -58,8 +64,11 @@ document.addEventListener('keydown', (event) => {
     }
   }
 });
+
 chrome.storage.session.onChanged.addListener(
   (changes) => {
+    console.log("Listener triggered")
+
     sesssionEventQueue.push(changes.data.newValue)
     if(!queueProcessing){
       queueProcessing = true
@@ -111,6 +120,7 @@ function panelSetUp(preHtml, postHtml){
 }
 
 function showTranslationPanel(loading = false) {
+  console.log("Show translation panel")
   previousSearchTerm = tr_data.text
   let historyEmpty = (!tr_data.history) || (tr_data.history.pref.length == 0 && tr_data.history.suff.length == 0)
 

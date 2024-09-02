@@ -4,6 +4,7 @@ const invertedIndex = new Map()
 let dictionaryData = null;
 let dictionaryDataIndexed = new Map() //allows O(1) retrieval where the key is the simplified word. The value is a list of entries with that key (as a single word can have multiple entries)
 let translationProcessingKilled = false
+chrome.storage.session.setAccessLevel({ accessLevel: 'TRUSTED_AND_UNTRUSTED_CONTEXTS' });
 
 chrome.runtime.onInstalled.addListener(() => {
   chrome.contextMenus.create({
@@ -33,6 +34,7 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
 chrome.contextMenus.onClicked.addListener(async (info, tab) => {
   if (info.menuItemId === "translate" && info.selectionText) {
     translationProcessingKilled = false
+    console.log("TRANSLATING")
     processTranslation(info.selectionText)
   }
 });
@@ -71,11 +73,14 @@ async function processTranslation(text, updateHistoryAction = "NEW"){
     tr_data.strokeImgUrl = `https://www.strokeorder.com/assets/bishun/guide/${text.charCodeAt(0)}.png`
 
   tr_data.history = await updateHistory(text, targetEntries.length == 0 ? "NONE" : updateHistoryAction)
-  
-  if(translationProcessingKilled)
+
+  if(translationProcessingKilled){
+    console.log("Trasnlation killed")
     return
+  }
 
   await chrome.storage.session.set({data: {action: "showTranslationPanel", data: tr_data}})
+
   if(targetEntries.length == 0)
     return
 
