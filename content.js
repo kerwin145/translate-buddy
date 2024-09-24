@@ -648,7 +648,7 @@ function processSentenceData(str){
   })
 }
 async function processSentences(data, queryUrl){
-  const DOMsentences = await waitForElement('.translate-sentences')
+  const DOMsentences = await  waitForElement('.translate-sentences')
 
   DOMsentences.innerHTML = ""
 

@@ -307,7 +307,9 @@ function sortEntries(entries, properNounPenealty = false){
     if(b.word_score_ex !== a.word_score_ex)
       return b.word_score_ex - a.word_score_ex
     
-    return b.word_score_in - a.word_score_in
+    if(b.word_score_in !== a.word_score_in)
+      return b.word_score_in - a.word_score_in
+    return b.pinyin_popularity - a.pinyin_popularity
   });
 
   return highPriority.concat(lowPriority);
