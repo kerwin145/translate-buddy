@@ -36,8 +36,6 @@ The stuff below here are QoL future features that would differentiate this app f
 - Tagging (idk if I want to implement, as the feature is kind of bloating)
     - Users can tag words, so they can be grouped
     - Allows for flash card quiz generation on a group of tagged words
-##### Others
-- (Deprioritized) To further improve sorting order of a word, if a word has different pinyin, we can rank it by searching all compounds containing the word and summing by the occurence of the pin yins. More occurences means better rank (more likely that the pronounciation is fitting)
 
 ### Future direction
 Phase 2 and 3, and parts of Phase 1 (excluding HSK stuff) can be generalized. Ideally, this code could be easily remodified to support another dictionary for a different langauge.

@@ -57,7 +57,7 @@ function processEventQueue(){
 }
 
 document.addEventListener('keydown', (event) => {
-  if (event.ctrlKey && event.altKey && event.key === 'n') {
+  if ((event.altKey && event.shiftKey && event.ctrlKey) || (event.metaKey && event.shiftKey && event.altKey)) {
     const selectedText = window.getSelection().toString();
     if(selectedText){
       sendQuery(selectedText)
@@ -768,7 +768,7 @@ function waitForElement(selector, timeout = 4000) {
         elapsedTime += intervalTime;
         if (elapsedTime >= timeout) {
           clearInterval(interval);
-          reject(new Error(`Element not found: ${selector}`));
+          // reject(new Error(`Element not found: ${selector}`));
         }
       }
     }, 100);
