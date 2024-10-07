@@ -265,7 +265,8 @@ function closeTranslationPanel() {
 async function showWordbankPanel(){ 
   chrome.runtime.sendMessage({action: "kill-translation"})
 
-  const res = await chrome.storage.local.get('wordbank');
+  const res = await chrome.storage.sync.get('wordbank');
+  console.log(res)
   let bank = []
   if(res && res.wordbank){
     bank = Object.keys(res.wordbank)
@@ -338,7 +339,7 @@ function loadWordBankPanel(data){
     let $deleteTerm = $('<div></div>', {class: 'wordbank-delete', text: 'Remove'})
     $deleteTerm.on('click', async ()=>{
       if($deleteTerm.hasClass('wordbank-delete-confirm')){
-        const res = await chrome.storage.local.get('wordbank');
+        const res = await chrome.storage.local.sync('wordbank');
         const bank = res.wordbank || {};
         delete bank[data.text];
         await chrome.storage.local.set({ wordbank: bank });

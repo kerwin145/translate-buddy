@@ -6,6 +6,7 @@ let dictionaryDataIndexed = new Map() //allows O(1) retrieval where the key is t
 let translationProcessingKilled = false
 chrome.storage.session.setAccessLevel({ accessLevel: 'TRUSTED_AND_UNTRUSTED_CONTEXTS' });
 
+// Add right click menu
 chrome.runtime.onInstalled.addListener(() => {
   chrome.contextMenus.create({
     id: "translate",
@@ -13,7 +14,7 @@ chrome.runtime.onInstalled.addListener(() => {
     contexts: ["selection"]
   });
 });
-
+// Message Listeners
 chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
   if (request.action === "translate") {
     console.log("Recieved translate request")
@@ -30,7 +31,7 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
     translationProcessingKilled = true
   }
 });
-
+// Click listener
 chrome.contextMenus.onClicked.addListener(async (info, tab) => {
   if (info.menuItemId === "translate" && info.selectionText) {
     translationProcessingKilled = false
@@ -38,6 +39,45 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
     processTranslation(info.selectionText)
   }
 });
+performVersionCheck()
+
+//Version checks
+async function performVersionCheck() {
+  try {
+      const currentVersionData = {
+          Word_Bank: 1,
+      };
+
+      const storedVersionData = await new Promise((resolve, reject) => {
+        chrome.storage.sync.get(['versionData'], (result) => {
+            if (chrome.runtime.lastError) {
+                return reject(chrome.runtime.lastError);
+            }
+            resolve(result.versionData);
+        });
+      });
+
+      if(!storedVersionData || !storedVersionData.Word_Bank || storedVersionData.Word_Bank < 1){
+
+      }
+      // if(!storedVersionData || !storedVersionData.History || storedVersionData.History < 1){
+      //   ensureHistoryUsesSync()
+      // }
+      
+      await new Promise((resolve, reject) => {
+        chrome.storage.sync.set({ versionData: currentVersionData }, () => {
+            if (chrome.runtime.lastError) {
+                return reject(chrome.runtime.lastError);
+            }
+            console.log('Version data saved to Chrome sync storage.');
+            resolve();
+        });
+      });
+
+  } catch (error) {
+      console.error('Error during version check:', error);
+  }
+}
 
 async function loadDictionaryData(text, basic = false){
   if(!dictionaryData){  
@@ -115,7 +155,7 @@ async function processTranslationBasic(text){
 }
 
 async function updateHistory(text, updateHistoryAction){
-  const res = await chrome.storage.local.get('history')
+  const res = await chrome.storage.sync.get('history')
   const history = res.history || { entries: [], idx: 0 };
   let { idx, entries } = history;
 
@@ -141,7 +181,7 @@ async function updateHistory(text, updateHistoryAction){
   const pref = entries.slice(0, idx-1)
   const suff = updateHistoryAction === "NEW" ? [] : entries.slice(idx, entries.length)
 
-  chrome.storage.local.set({ history: {entries, idx}})
+  chrome.storage.sync.set({ history: {entries, idx}})
 
   return {pref, suff}
 }
