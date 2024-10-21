@@ -58,11 +58,15 @@ async function performVersionCheck() {
       });
 
       if(!storedVersionData || !storedVersionData.Word_Bank || storedVersionData.Word_Bank < 1){
-
+        const localWordbank = await chrome.storage.local.get('wordbank')
+        for (const [key, value] of Object.entries(localWordbank)) {
+          window.trBuddy.saveSyncWordbank(key, {
+            time: value.time,
+            url: value.url[0] //we're gonna throw away the rest. It's not a used feature in the prior version anyway
+          })
+        }
       }
-      // if(!storedVersionData || !storedVersionData.History || storedVersionData.History < 1){
-      //   ensureHistoryUsesSync()
-      // }
+
       
       await new Promise((resolve, reject) => {
         chrome.storage.sync.set({ versionData: currentVersionData }, () => {

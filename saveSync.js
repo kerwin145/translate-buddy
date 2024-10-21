@@ -1,106 +1,70 @@
+window.trBuddy = window.myExtension || {};
+window.trBuddy.saveSyncWordbank = saveSyncWordbank;
 
-//TODO: Make it so super key only is important in fallback
-async function saveToSync(key, value, superKey = null) {
-    if (superKey) {
-        const { [superKey]: existingData = [] } = await chrome.storage.sync.get(superKey);
-        existingData.push(value); 
+async function saveSyncWordbank(key, data){
+    const online = await isOnline();
 
-        // Check online status before saving
-        if (navigator.onLine) {
-            await chrome.storage.sync.set({ [superKey]: existingData });
-            console.log(`Saved ${value} to ${superKey} in sync storage.`);
-        } else {
-            // Fallback to local storage if the connection drops
-            const { queue = [] } = await chrome.storage.local.get('queue');
-            queue.push({ key: superKey, value, superKey });
-            await chrome.storage.local.set({ queue });
-            console.log(`Connection lost. Saved ${value} to local queue under ${superKey}.`);
+    if(online){
+        const { wordbank = {} } = await chrome.storage.local.get('wordbank');
+        pushDataToWordbank(wordbank, key, data)
+
+        await chrome.storage.sync.set({wordbank})
+    }else{
+        const { wordbankQueue  = [] } = await chrome.storage.local.get('wordbankQueue');
+        wordbankQueue.push({key, data})
+        await chrome.storage.local.set({ wordbankQueue  });
+        console.log(`Connection lost. Saved ${data} to local queue with key ${key}.`);
+
+    }
+} 
+
+async function handleOnline(){
+    const { wordbankQueue = [] } = await chrome.storage.local.get('wordbankQueue');
+    
+    if (wordbankQueue.length > 0) {
+        const res = await chrome.storage.sync.get('wordbank');
+        const wordbank = res.wordbank || {};
+
+        for (const item of wordbankQueue) {
+            pushDataToWordbank(wordbank, item.key, item.data)
         }
-    } else {
-        // Check online status before saving
-        if (navigator.onLine) {
-            await chrome.storage.sync.set({ [key]: value });
-            console.log(`Saved ${key} to sync storage.`);
-        } else {
-            // Fallback to local storage if the connection drops
-            const { queue = [] } = await chrome.storage.local.get('queue');
-            queue.push({ key, value, superKey });
-            await chrome.storage.local.set({ queue });
-            console.log(`Connection lost. Saved ${value} to local queue with key ${key}.`);
-        }
+
+        await chrome.storage.sync.set({ wordbank });
+        await chrome.storage.local.set({ wordbankQueue: [] });
+        console.log('Wordbank queue synced to cloud.');
     }
 }
 
-window.saveToSync = saveToSync
-
-/*
-Usage of Super key. Suppose data is like
-{
-books: {{name: "book1"}, {name: "book2"}},
-cache: ["Item 1", "Item 2"]
+function pushDataToWordbank(wordbank, key, data){
+    if(wordbank.hasOwnProperty(key)){
+        const curData = wordbank[key]
+        curData.time = data.time
+        if (data.sentence && !curData.mySentences.includes(data.sentence)){
+            curData.mySentences.push(data.sentence)
+        }
+        if (!curData.url.includes(data.url)){
+            curData.url.push(data.url)
+        }
+    }else{
+        wordbank[key] = {
+            time: data.time,
+            url: [data.url],
+            mySentences: data.sentence ? [data.sentence] : []
+        }
+    }
+    return wordbank
 }
-
-We can save to books directly if we specify superkey as "books"
-
-NOTE: Superkey must not be nested in another super key , ie it must be top level
-*/
-async function handleOnline() {
-    const { queue = [] } = await chrome.storage.local.get('queue');
-
-    while (queue.length > 0) {
-        const {key, value, superKey} = queue.pop()
-        
-        if (!superKey){
-            await chrome.storage.sync.set({ [key]: value });
-            if(!navigator.onLine){
-                console.log("Stopping merge as we are offline")
-                break
-            }
-            //If user is still online at this point, then we can safely say the item from queue is processed
-            await chrome.storage.local.set({ queue });
-            console.log(`Merged ${value} from queue to ${key} in sync storage.`);
-            continue
-        }
-        //else
-        switch(superKey){
-            //Update value format: "{sentence: "abc", time: JS-TIME, url: "test-url"}"
-            case "wordbank":
-                const { [superKey]: existingData = {} } = await chrome.storage.sync.get(superKey);
-
-                if (!existingData.hasOwnProperty(key)) {
-                    existingData.key.mySentences = [value.sentence]
-                    existingData.key.time = value.time
-                    existingData.key.url = [value.url]
-                    await chrome.storage.sync.set({ [superKey]: existingData });
-                    console.log(`Added ${value} to ${superKey} in sync storage.`);
-                } else {
-                    // Kinda inefficient but who cares at this point ;-;
-                    if (!existingData.key.mySentences.includes(value.sentence)){
-                        existingData.key.mySentences.push(value.sentence)
-                    }
-                    existingData.key.time = value.time
-                    if (!existingData.key.url.includes(value.url)){
-                        existingData.key.url.push(value.url)
-                    }
-                    await chrome.storage.sync.set({ [superKey]: existingData });
-                }
-            break;
-        }
-        if(!navigator.onLine){
-            console.log("Stopping merge as we are offline")
-            break
-        }
-        await chrome.storage.local.set({ queue });
-        console.log(`Merged ${value} from queue to ${key} in sync storage.`);
+async function isOnline() {
+    try {
+        const response = await fetch('https://www.google.com/generate_204');
+        return response.ok;
+    } catch (error) {
+        return false;
     }
 }
 
 // Event listeners for online and offline events
-window.addEventListener('online', handleOnline);
-
-// Example usage
-// async function performSave() {
-//     const dataToSave = { /* your data here */ };
-//     const superKey = 'mySuperKey'; // Example super key
-//     await saveToSync('myData', dataToSave, superKey);
-// }
+window.addEventListener('online', async () => {
+    console.log('Connection restored. Syncing queue...');
+    await handleOnline();
+});

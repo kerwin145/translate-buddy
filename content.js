@@ -339,7 +339,7 @@ function loadWordBankPanel(data){
     let $deleteTerm = $('<div></div>', {class: 'wordbank-delete', text: 'Remove'})
     $deleteTerm.on('click', async ()=>{
       if($deleteTerm.hasClass('wordbank-delete-confirm')){
-        const res = await chrome.storage.local.sync('wordbank');
+        const res = await chrome.storage.local('wordbank');
         const bank = res.wordbank || {};
         delete bank[data.text];
         await chrome.storage.local.set({ wordbank: bank });
@@ -407,7 +407,8 @@ function isProperNoun(pinyin){
 async function addWordBankControl(){
   var container = $('#tr-bank-controls');
 
-  const res = await chrome.storage.local.get('wordbank');
+  //TODO: Get rid of this
+  const res = await chrome.storage.sync.get('wordbank');
   const bank = res.wordbank || {};
 
   var deleteWord = $('<img>', { src: chrome.runtime.getURL('images/bank_delete.png'), id: 'tr-delete-bank', class: 'tr-bank', title: "Delete from word bank (click twice to confirm)" });
@@ -430,12 +431,10 @@ async function addWordBankControl(){
   });
 
   addWord.on("click", async () => {
-    bank[tr_data.text] = {
+    window.trBuddy.saveSyncWordbank(tr_data.text, {
       time: new Date().toISOString(),
-      url: [window.location.href],
-      mySentences: []
-    };
-    await chrome.storage.local.set({ wordbank: bank });
+      url: window.location.href,
+    })
     deleteWord.toggleClass('tr-hide')
     addWord.toggleClass('tr-hide')
   });
