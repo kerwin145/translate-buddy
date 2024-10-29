@@ -35,6 +35,7 @@ function processEventQueue(){
         }else{
           let $html = $(data);
           const table = $html.find('.table').text();
+          print(table)
           tr_data.sentenceData = processSentenceData(table)
           chrome.runtime.sendMessage({action: "setCache", data: {key: tr_data.text, value: table}}) //we store table rather than the processed data b/c table is smaller, and processing won't take too long
         }
