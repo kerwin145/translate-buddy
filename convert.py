@@ -158,6 +158,25 @@ for entry in entries:
         entry['word_score_in'] = (1/score * 10000) // 100
         entry['word_score_ex'] = (1/score_ex * 10000) // 100
 
+# give pinyin popularity scores
+pinyin_popularities = {}
+for entry in entries:
+    pinyins = [p for p in entry['pinyin'].split() if p != '-']
+    if  len(entry['simplified']) != len(pinyins):
+        print(entry['simplified'])
+        print(pinyins)
+        continue
+
+    for idx, c in enumerate(entry['simplified']):
+        pinyin_popularities[(c, pinyins[idx])] = pinyin_popularities.get((c, pinyins[idx]), 0) + 1
+for entry in entries:
+    if len(entry['simplified']) > 1 or (entry['simplified'], entry['pinyin']) not in pinyin_popularities:
+        entry['pinyin_popularity'] = 0
+        continue
+
+    entry['pinyin_popularity'] = pinyin_popularities[(entry['simplified'], entry['pinyin'])]
+    
+
 
 print("FOUND:", found)
 # Write JSON data to file

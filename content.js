@@ -8,6 +8,25 @@ let previousSearchTerm = "" //set in showTranslationPanel for wordbank back butt
 let sesssionEventQueue = []
 let queueProcessing = false
 
+// see if resync is needed on page refresh
+chrome.storage.local.get('wordbankQueue', (result) => {
+  const wordbankQueue = result.wordbankQueue || [];
+  if (wordbankQueue.length > 0) { 
+    chrome.runtime.sendMessage({ action: "resyncWordBank" })
+  }
+});
+
+// or resync if connection to wifi is restored
+window.addEventListener('online', async () => {
+  const { wordbankQueue = [] } = await chrome.storage.local.get('wordbankQueue');
+  if (wordbankQueue.length > 0){
+    alert("[Translate Buddy Extension]\nYou're network is restored :)\nYou have tried to save words while offline. Proceeding to sync local word changes to translate buddy's word bank!")
+    chrome.runtime.sendMessage({action: "resyncWordBank"})
+  }
+  console.log('Connection restored. Syncing queue...');
+});
+
+
 function processEventQueue(){
   while(sesssionEventQueue.length > 0){
     console.log(document.visibilityState)
@@ -35,7 +54,6 @@ function processEventQueue(){
         }else{
           let $html = $(data);
           const table = $html.find('.table').text();
-          print(table)
           tr_data.sentenceData = processSentenceData(table)
           chrome.runtime.sendMessage({action: "setCache", data: {key: tr_data.text, value: table}}) //we store table rather than the processed data b/c table is smaller, and processing won't take too long
         }
@@ -58,7 +76,7 @@ function processEventQueue(){
 }
 
 document.addEventListener('keydown', (event) => {
-  if (event.ctrlKey && event.altKey && event.key === 'n') {
+  if ((event.altKey && event.shiftKey && event.ctrlKey) || (event.metaKey && event.shiftKey && event.altKey)) {
     const selectedText = window.getSelection().toString();
     if(selectedText){
       sendQuery(selectedText)
@@ -78,7 +96,7 @@ chrome.storage.session.onChanged.addListener(
   });
 
 //check history could be "BACK" "FORWARD" or null
-function sendQuery(text, updateHistoryAction = "NEW"){
+function sendQuery(text, updateHistoryAction = "NEW"){  
   chrome.runtime.sendMessage({action: "translate", updateHistoryAction, text})
 }
 
@@ -231,6 +249,9 @@ function showTranslationPanel(loading = false) {
   const DOMstrokeOrder = document.createElement('img')
   DOMstrokeOrder.src = tr_data.strokeImgUrl
   DOMstrokeOrder.classList.add('translate-stroke-order')
+  if (window.innerHeight <= 750) {
+    DOMstrokeOrder.style.height = '160px';
+  }
 
   DOMstrokeOrderContainer.appendChild(DOMstrokeOrder)
 
@@ -265,8 +286,7 @@ function closeTranslationPanel() {
 
 async function showWordbankPanel(){ 
   chrome.runtime.sendMessage({action: "kill-translation"})
-
-  const res = await chrome.storage.local.get('wordbank');
+  const res = await chrome.storage.sync.get('wordbank');
   let bank = []
   if(res && res.wordbank){
     bank = Object.keys(res.wordbank)
@@ -339,10 +359,7 @@ function loadWordBankPanel(data){
     let $deleteTerm = $('<div></div>', {class: 'wordbank-delete', text: 'Remove'})
     $deleteTerm.on('click', async ()=>{
       if($deleteTerm.hasClass('wordbank-delete-confirm')){
-        const res = await chrome.storage.local.get('wordbank');
-        const bank = res.wordbank || {};
-        delete bank[data.text];
-        await chrome.storage.local.set({ wordbank: bank });
+        await deleteFromWordBank(data.text)
         showWordbankPanel()
       }else{
         $deleteTerm.addClass('wordbank-delete-confirm')
@@ -406,10 +423,6 @@ function isProperNoun(pinyin){
 
 async function addWordBankControl(){
   var container = $('#tr-bank-controls');
-
-  const res = await chrome.storage.local.get('wordbank');
-  const bank = res.wordbank || {};
-
   var deleteWord = $('<img>', { src: chrome.runtime.getURL('images/bank_delete.png'), id: 'tr-delete-bank', class: 'tr-bank', title: "Delete from word bank (click twice to confirm)" });
   var addWord = $('<img>', { src: chrome.runtime.getURL('images/bank_add.png'), id: 'tr-add-bank', class: 'tr-bank', title: "Add term to word bank" });
 
@@ -420,8 +433,7 @@ async function addWordBankControl(){
     if(!deleteWord.hasClass("tr-bank-delete-confirm")){
       deleteWord.addClass("tr-bank-delete-confirm")
     }else{
-      delete bank[tr_data.text];
-      await chrome.storage.local.set({ wordbank: bank });
+      deleteFromWordBank(tr_data.text)
       deleteWord.toggleClass('tr-hide')
       deleteWord.toggleClass("tr-bank-delete-confirm")
       addWord.toggleClass('tr-hide')
@@ -430,12 +442,17 @@ async function addWordBankControl(){
   });
 
   addWord.on("click", async () => {
-    bank[tr_data.text] = {
-      time: new Date().toISOString(),
-      url: [window.location.href],
-      mySentences: []
-    };
-    await chrome.storage.local.set({ wordbank: bank });
+    chrome.runtime.sendMessage({
+      action: "saveSync", 
+      data:{
+        key: tr_data.text, 
+        data: {
+          time: new Date().toISOString(),
+          url: window.location.href,
+        }
+      }
+    })
+
     deleteWord.toggleClass('tr-hide')
     addWord.toggleClass('tr-hide')
   });
@@ -443,7 +460,8 @@ async function addWordBankControl(){
   container.append(deleteWord);
   container.append(addWord);
 
-  bank[tr_data.text] ? addWord.addClass('tr-hide') : deleteWord.addClass('tr-hide')
+  const {wordbank = {}} = await chrome.storage.sync.get('wordbank');
+  wordbank[tr_data.text] ? addWord.addClass('tr-hide') : deleteWord.addClass('tr-hide')
   
 }
 
@@ -585,12 +603,13 @@ function makeCompoundListHTML(parent, compounds, blockTitle, blockNoResultsText,
 }
 
 function isChineseChar(c){
-  return c.codePointAt(0) >= 0x4E00&& c.codePointAt(0) <= 0x9FFF
+  return c.codePointAt(0) >= 0x4E00 && c.codePointAt(0) <= 0x9FFF
 }
 
 function processSentenceData(str){
   let processed = str.split(/\d+\s{2,}/).filter(x => x.length > 1)
-  .map(el => {let spl = el.split(/\n/); return {rawChinese: spl[0].trim().replace(/\s([\p{P}\p{S}])/gu, '$1'), english:spl[1]}})
+  .map(el => {let spl = el.split(/\n+/); return {rawChinese: spl[0].trim().replace(/\s([\p{P}\p{S}])/gu, '$1'), english:spl[1]}})
+  .filter(x => x.rawChinese.length > 0)
 
   return processed.map(el => {
     const cur = el.rawChinese
@@ -649,7 +668,7 @@ function processSentenceData(str){
   })
 }
 async function processSentences(data, queryUrl){
-  const DOMsentences = await waitForElement('.translate-sentences')
+  const DOMsentences = await  waitForElement('.translate-sentences')
 
   DOMsentences.innerHTML = ""
 
@@ -769,9 +788,15 @@ function waitForElement(selector, timeout = 4000) {
         elapsedTime += intervalTime;
         if (elapsedTime >= timeout) {
           clearInterval(interval);
-          reject(new Error(`Element not found: ${selector}`));
+          // reject(new Error(`Element not found: ${selector}`));
         }
       }
     }, 100);
   });
+}
+
+async function deleteFromWordBank(text){
+  const {wordbank = {}} = await chrome.storage.sync.get('wordbank');
+  delete wordbank[text];
+  await chrome.storage.sync.set({ wordbank });
 }

@@ -1,4 +1,8 @@
 /* === Global styles === */
+#translation-panel img {
+  border-radius: 0;
+}
+
 #translation-panel{
   font-family: Arial, Helvetica, sans-serif;
 }
@@ -75,8 +79,8 @@
 
 #translation-panel{
   position: fixed;
-  top: 20px;
-  right: 20px;
+  top: 10px;
+  right: 10px;
   padding: 16px calc(1rem + 20px);
   color: indigo;
   background-color: rgb(240, 248, 255);
@@ -373,6 +377,7 @@
   padding: 6px 0;
 }
 
+
 .translate-comp-entry-container::-webkit-scrollbar, 
 .translation-definitions::-webkit-scrollbar, 
 .sentences-body::-webkit-scrollbar,
@@ -488,6 +493,7 @@ opacity: 85%;
 
 /* Stroke order*/
 .translate-stroke-order{
+  border-radius: 4px !important;
   max-width: 200px;
   max-height: 200px;
 }
@@ -520,6 +526,7 @@ opacity: 85%;
 }
 
 .translate-sentences .sentences-line{
+  line-height: 1.25;
   display: flex;
   gap: 3px;
   padding-right: 2px;
@@ -540,10 +547,12 @@ opacity: 85%;
   margin-top: 4px;
   font-size: .7em;
   color: silver;
+  line-height: 1.15;
 }
 
 
 .sentences-control{
+  line-height: 1.15;
   margin-top: 6px;
   display: flex;
   justify-content: space-between;
@@ -644,10 +653,6 @@ opacity: 85%;
 
 #translation-panel.translation-panel-expand .translate-comp{
   margin: 2px 0;
-}
-
-#translation-panel.translation-panel-expand .translation-explore-panels{
-  justify-content: flex-start;
 }
 
 #translation-panel.translation-panel-expand .translation-definitions{

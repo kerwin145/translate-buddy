@@ -1,3 +1,5 @@
+importScripts('saveSync.js')
+
 //initializing this here to show structure. Who needs object oriented programming?
 tr_data = {text: "", HSK_levels: null, page: null, entries: [], compounds: [], subCompounds: [], strokeImgUrl: "", useImgCache: false, sentenceData: null, sentenceQuery: null, history: {}}
 const invertedIndex = new Map()
@@ -6,6 +8,7 @@ let dictionaryDataIndexed = new Map() //allows O(1) retrieval where the key is t
 let translationProcessingKilled = false
 chrome.storage.session.setAccessLevel({ accessLevel: 'TRUSTED_AND_UNTRUSTED_CONTEXTS' });
 
+// Add right click menu
 chrome.runtime.onInstalled.addListener(() => {
   chrome.contextMenus.create({
     id: "translate",
@@ -13,24 +16,30 @@ chrome.runtime.onInstalled.addListener(() => {
     contexts: ["selection"]
   });
 });
-
+// Message Listeners
 chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
-  if (request.action === "translate") {
+  const {action, data} = request
+  if (action === "translate") {
     console.log("Recieved translate request")
     translationProcessingKilled = false
     processTranslation(request.text, request.updateHistoryAction)
   } 
-  else if (request.action === "translate-basic-request"){
+  else if (action === "translate-basic-request"){
     processTranslationBasic(request.text)
   }
-  else if(request.action === "setCache"){
-    updateCache(request.data.key, request.data.value)
-  }else if(request.action === "kill-translation"){
+  else if(action === "setCache"){
+    updateCache(data.key, data.value)
+  }else if(action === "kill-translation"){
     console.log("Request to kill translation recieved")
     translationProcessingKilled = true
+  } else if (action === "saveSync"){
+    console.log("SaveSync requested")
+    saveSyncWordbank(data.key, data.data)
+  } else if (action === "resyncWordBank"){
+    handleOnline()
   }
 });
-
+// Click listener
 chrome.contextMenus.onClicked.addListener(async (info, tab) => {
   if (info.menuItemId === "translate" && info.selectionText) {
     translationProcessingKilled = false
@@ -38,6 +47,61 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
     processTranslation(info.selectionText)
   }
 });
+
+performVersionCheck()
+
+//Version checks
+async function performVersionCheck() {
+  try {
+      const currentVersionData = {
+          Word_Bank: 1,
+      };
+
+      const storedVersionData = await new Promise((resolve, reject) => {
+        chrome.storage.sync.get(['versionData'], (result) => {
+            if (chrome.runtime.lastError) {
+                return reject(chrome.runtime.lastError);
+            }
+            resolve(result.versionData);
+        });
+      });
+
+      if(!storedVersionData || !storedVersionData.Word_Bank || storedVersionData.Word_Bank < 1){
+        console.log("Updating version")
+        //clear cache
+        console.log("Clearing cache")
+        await chrome.storage.local.set({cache: {}})
+
+        const {wordbank} = await chrome.storage.local.get('wordbank')
+        for (const [key, value] of Object.entries(wordbank)) {
+          console.log(key)
+          console.log(value)
+          saveSyncWordbank(key, value)
+          // window.trBuddy.saveSyncWordbank(key, {
+          //   time: value.time,
+          //   url: value.url[0] //we're gonna throw away the rest. It's not a used feature in the prior version anyway
+          // })
+        }
+      }
+
+      await new Promise((resolve, reject) => {
+        // const updatedVersionData = {
+        //   ...storedVersionData,
+        //   Word_Bank: 0
+        // };
+        const updatedVersionData = {}
+        chrome.storage.sync.set({ versionData: updatedVersionData }, () => {
+          if (chrome.runtime.lastError) {
+              return reject(chrome.runtime.lastError);
+          }
+          resolve();
+        });
+      });
+
+  } catch (error) {
+      console.error('Error during version check:', error);
+  }
+}
 
 async function loadDictionaryData(text, basic = false){
   if(!dictionaryData){  
@@ -50,7 +114,7 @@ async function loadDictionaryData(text, basic = false){
     const res = await fetch(chrome.runtime.getURL('cedict.json'))
     const data = await res.json()
     dictionaryData = data; 
-    buildIndexedDictionary(); 
+    buildIndexedDictionary()
     buildInvertedIndex()
   }
 }
@@ -115,7 +179,7 @@ async function processTranslationBasic(text){
 }
 
 async function updateHistory(text, updateHistoryAction){
-  const res = await chrome.storage.local.get('history')
+  const res = await chrome.storage.sync.get('history')
   const history = res.history || { entries: [], idx: 0 };
   let { idx, entries } = history;
 
@@ -141,7 +205,7 @@ async function updateHistory(text, updateHistoryAction){
   const pref = entries.slice(0, idx-1)
   const suff = updateHistoryAction === "NEW" ? [] : entries.slice(idx, entries.length)
 
-  chrome.storage.local.set({ history: {entries, idx}})
+  chrome.storage.sync.set({ history: {entries, idx}})
 
   return {pref, suff}
 }
@@ -307,7 +371,9 @@ function sortEntries(entries, properNounPenealty = false){
     if(b.word_score_ex !== a.word_score_ex)
       return b.word_score_ex - a.word_score_ex
     
-    return b.word_score_in - a.word_score_in
+    if(b.word_score_in !== a.word_score_in)
+      return b.word_score_in - a.word_score_in
+    return b.pinyin_popularity - a.pinyin_popularity
   });
 
   return highPriority.concat(lowPriority);
