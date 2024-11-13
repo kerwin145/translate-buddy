@@ -79,8 +79,8 @@
 
 #translation-panel{
   position: fixed;
-  top: 10px;
-  right: 10px;
+  top: 6px;
+  right: 6px;
   padding: 16px calc(1rem + 20px);
   color: indigo;
   background-color: rgb(240, 248, 255);
@@ -96,10 +96,13 @@
 }
 
 #translation-panel h3{
+  display: flex;
+  flex-wrap: wrap;
   font-size: 1.25em;
   font-weight: normal;
   margin: 0;
   margin-bottom: 4px;
+  gap: 6px;
   padding: 0;
 }
 
@@ -332,10 +335,14 @@
 
 .trans-control{
   width: fit-content;
-  margin-left: auto;
+  font-size: .7em;
   display: flex;
   gap: 4px;
   align-items: center;
+}
+
+.trans-control .trans-control-navigate:hover{
+  cursor: pointer;
 }
 
 .translate-no-compounds{
@@ -460,17 +467,23 @@ opacity: 85%;
 /* Explore bar */
 .translation-explore{
   width: 100%;
+  display: flex;
+  flex-direction: column;
 }
 .translation-explore-panels{ 
   display: flex;
   justify-content: center;
-
+  flex: 1;
 }
 .translation-explore-controls{
   display: flex;
   gap: 6px;
   border-bottom: 1px solid silver;
   margin-bottom: 16px;
+}
+
+#translation-panel:not(.translation-panel-expand):not(.translation-panel-expand-2) .translation-explore-panels.translation-shrink-explore{
+  height: 160px;
 }
 
 .translation-explore-controls button{
@@ -494,6 +507,7 @@ opacity: 85%;
 /* Stroke order*/
 .translate-stroke-order{
   border-radius: 4px !important;
+  height: 100%;
   max-width: 200px;
   max-height: 200px;
 }
@@ -501,11 +515,14 @@ opacity: 85%;
 /* Example sentences */
 .translate-sentences {
   flex: 1;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  max-height: 24vh;
 }
 .translate-sentences .sentences-body{
   overflow-y: auto;
   padding: 2px;
-  max-height: 24vh;
   overflow-x: hidden;
 }
 .translate-sentences .sentences-block{
@@ -586,26 +603,22 @@ opacity: 85%;
   grid-area: compounds;
 }
 
-.trans-control{
-  grid-area: control;
-}
-
 .translation-explore{
   grid-area: explore;
 }
 
 .translate-results{
-  grid-template-areas: "definitions" "control" "compounds" "explore";
+  grid-template-areas: "definitions" "compounds" "explore";
 }
 
 #translation-panel.translation-panel-expand .translate-results, 
 #translation-panel.translation-panel-expand-2 .translate-results{
   grid-template-areas: 
   "definitions compounds"
-  "control compounds"
   "explore compounds";
   column-gap: 32px;
   grid-template-columns: 1fr 1fr;
+  grid-template-rows: min-content 1fr;
 }
 
 #translation-panel.translation-panel-expand .skew-compound-container, 

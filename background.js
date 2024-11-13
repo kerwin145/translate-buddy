@@ -1,4 +1,18 @@
 importScripts('saveSync.js')
+// Get data from local storage
+chrome.storage.local.get(null).then((localData) => {
+  console.log("Local Storage:", localData);
+
+  // Get data from sync storage
+  chrome.storage.sync.get(null).then((syncData) => {
+      console.log("Sync Storage:", syncData);
+  }).catch((error) => {
+      console.error("Error fetching sync storage:", error);
+  });
+}).catch((error) => {
+  console.error("Error fetching local storage:", error);
+});
+
 
 //initializing this here to show structure. Who needs object oriented programming?
 tr_data = {text: "", HSK_levels: null, page: null, entries: [], compounds: [], subCompounds: [], strokeImgUrl: "", useImgCache: false, sentenceData: null, sentenceQuery: null, history: {}}
@@ -66,31 +80,24 @@ async function performVersionCheck() {
         });
       });
 
-      if(!storedVersionData || !storedVersionData.Word_Bank || storedVersionData.Word_Bank < 1){
+      if(!storedVersionData || !storedVersionData.Word_Bank || storedVersionData.Word_Bank < currentVersionData.Word_Bank){
         console.log("Updating version")
         //clear cache
         console.log("Clearing cache")
         await chrome.storage.local.set({cache: {}})
-
+        console.log("Syncing deprecated local word bank to cloud")
         const {wordbank} = await chrome.storage.local.get('wordbank')
         for (const [key, value] of Object.entries(wordbank)) {
           console.log(key)
-          console.log(value)
-          saveSyncWordbank(key, value)
-          // window.trBuddy.saveSyncWordbank(key, {
-          //   time: value.time,
-          //   url: value.url[0] //we're gonna throw away the rest. It's not a used feature in the prior version anyway
-          // })
+          await saveSyncWordbank(key, value)
         }
       }
-
       await new Promise((resolve, reject) => {
-        // const updatedVersionData = {
-        //   ...storedVersionData,
-        //   Word_Bank: 0
-        // };
-        const updatedVersionData = {}
-        chrome.storage.sync.set({ versionData: updatedVersionData }, () => {
+        const updatedVersionData = {
+          ...storedVersionData,
+          Word_Bank: 1
+        };
+        chrome.storage.sync.set({ "versionData": updatedVersionData }, () => {
           if (chrome.runtime.lastError) {
               return reject(chrome.runtime.lastError);
           }

@@ -16,26 +16,13 @@ chrome.storage.local.get('wordbankQueue', (result) => {
   }
 });
 
-// or resync if connection to wifi is restored
-window.addEventListener('online', async () => {
-  const { wordbankQueue = [] } = await chrome.storage.local.get('wordbankQueue');
-  if (wordbankQueue.length > 0){
-    alert("[Translate Buddy Extension]\nYou're network is restored :)\nYou have tried to save words while offline. Proceeding to sync local word changes to translate buddy's word bank!")
-    chrome.runtime.sendMessage({action: "resyncWordBank"})
-  }
-  console.log('Connection restored. Syncing queue...');
-});
-
-
 function processEventQueue(){
   while(sesssionEventQueue.length > 0){
-    console.log(document.visibilityState)
-
+    // console.log(document.visibilityState)
     let event = sesssionEventQueue.shift()
 
     if(document.visibilityState.toLowerCase() !== "visible")
       continue
-
 
     let {action, data} = event
 
@@ -76,7 +63,11 @@ function processEventQueue(){
 }
 
 document.addEventListener('keydown', (event) => {
-  if ((event.altKey && event.shiftKey && event.ctrlKey) || (event.metaKey && event.shiftKey && event.altKey)) {
+  if ((event.altKey && event.shiftKey && event.ctrlKey && (event.key === 'd' || event.key === 'D')) ||
+    (event.metaKey && event.shiftKey && event.altKey && (event.key === 'd' || event.key === 'D'))) {
+    showWordbankPanel();
+  }
+  else if ((event.altKey && event.shiftKey && event.ctrlKey) || (event.metaKey && event.shiftKey && event.altKey)) {
     const selectedText = window.getSelection().toString();
     if(selectedText){
       sendQuery(selectedText)
@@ -86,8 +77,6 @@ document.addEventListener('keydown', (event) => {
 
 chrome.storage.session.onChanged.addListener(
   (changes) => {
-    console.log("Listener triggered")
-
     sesssionEventQueue.push(changes.data.newValue)
     if(!queueProcessing){
       queueProcessing = true
@@ -139,7 +128,6 @@ function panelSetUp(preHtml, postHtml){
 }
 
 function showTranslationPanel(loading = false) {
-  console.log("Show translation panel")
   previousSearchTerm = tr_data.text
   let historyEmpty = (!tr_data.history) || (tr_data.history.pref.length == 0 && tr_data.history.suff.length == 0)
 
@@ -228,12 +216,13 @@ function showTranslationPanel(loading = false) {
   $.each(definitions, function(index, d) {
       $DOMdefinitionsList.append(`<li>${d}</li>`);
   });
-  $DOMdefinitions.append($('<h3></h3>').text("Definitions"))
+  const $header = $('<h3></h3>').text("Definitions");
+  $DOMdefinitions.append($header)
   $DOMdefinitions.append($DOMdefinitionsList)
   $(DOMresults).append($DOMdefinitions)
     
   if(tr_data.entries.length > 1)
-    makeNavChip(DOMresults)
+    makeNavChip($header.get(0))
 
   let DOMcompounds = document.createElement('div')
   DOMcompounds.className = 'translate-compounds-container'
@@ -249,9 +238,7 @@ function showTranslationPanel(loading = false) {
   const DOMstrokeOrder = document.createElement('img')
   DOMstrokeOrder.src = tr_data.strokeImgUrl
   DOMstrokeOrder.classList.add('translate-stroke-order')
-  if (window.innerHeight <= 750) {
-    DOMstrokeOrder.style.height = '160px';
-  }
+
 
   DOMstrokeOrderContainer.appendChild(DOMstrokeOrder)
 
@@ -479,6 +466,9 @@ function makeExploreBar(parent, children, titles){
   DOMexploreControls.classList.add('translation-explore-controls')
   const DOMexplorePanel = document.createElement('div')
   DOMexplorePanel.classList.add('translation-explore-panels')
+  if (window.innerHeight <= 750) {
+    DOMexplorePanel.classList.add('translation-shrink-explore')
+  }
 
   DOMexplore.appendChild(DOMexploreControls)
   DOMexplore.appendChild(DOMexplorePanel)
@@ -519,11 +509,15 @@ function makeNavChip(parent){
   DOMcontrol.classList.add("trans-control")
 
   const rightArrow = document.createElement('span')
-  const counter = document.createElement('span')
-  const leftArrow = document.createElement('span')
+  rightArrow.className = 'trans-control-navigate'
   rightArrow.innerHTML = ">"
-  counter.innerHTML = `${tr_data.page + 1} / ${tr_data.entries.length}`
+  rightArrow.title = "Next definition, shortcut: right arrow"
+  const leftArrow = document.createElement('span')
+  leftArrow.className = 'trans-control-navigate'
   leftArrow.innerHTML = "<"
+  leftArrow.title = "Previous definition, shortcut: left arrow"
+  const counter = document.createElement('span')
+  counter.innerHTML = `${tr_data.page + 1} / ${tr_data.entries.length}`
   
   if(tr_data.page == 0)
     leftArrow.classList.add('tr-nav-disabled')

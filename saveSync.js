@@ -1,25 +1,22 @@
-async function saveSyncWordbank(key, data) {
+ async function saveSyncWordbank(key, data){
+
+    const { wordbank = {} } = await chrome.storage.sync.get('wordbank');
+    pushDataToWordbank(wordbank, key, data)
+    await chrome.storage.sync.set({wordbank})
+
     const online = await isOnline();
-
-    // Get or initialize wordbank from local storage
-    const { wordbank = {} } = await chrome.storage.local.get('wordbank');
-    pushDataToWordbank(wordbank, key, data);
-
-    if (online) {
-        // Save to both sync and local storage when online
-        await chrome.storage.sync.set({ wordbank });
-        await chrome.storage.local.set({ wordbank });
-    } else {
-        // Save to local storage queue if offline
-        const { wordbankQueue = [] } = await chrome.storage.local.get('wordbankQueue');
-        wordbankQueue.push({ key, data });
-        await chrome.storage.local.set({ wordbankQueue });
+    if(!online){
+        const { wordbankQueue  = [] } = await chrome.storage.local.get('wordbankQueue');
+        wordbankQueue.push({key, data})
+        await chrome.storage.local.set({ wordbankQueue  });
         console.log(`Connection lost. Saved ${data} to local queue with key ${key}.`);
+
     }
-}
+} 
 
 async function handleOnline(){    
     const { wordbankQueue = [] } = await chrome.storage.local.get('wordbankQueue');
+    console.log("Word bank queue")
     console.log(wordbankQueue)
 
     if (wordbankQueue.length > 0) {
