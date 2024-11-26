@@ -35,10 +35,6 @@
   border: none !important;
 }
 
-.tr-maxheight-45vh{
-  max-height: 45vh;
-}
-
 #translation-panel a, #translation-panel a:hover, #translation-panel a:visited{
   color: indigo;
 }
@@ -251,9 +247,17 @@
 .translate-results{
   margin: auto;
   width: 100%;
-  display: grid;
+  display: flex;
+  flex-direction: column;
   max-height: 80vh;
 }
+
+/* .translate-results > *{
+  flex: 1 1 30vh;
+  min-height: 0;
+  flex: 1;
+  max-height: min-content;
+} */
 
 .translate-header{
   display: grid;
@@ -279,7 +283,7 @@
 
 .translation-definitions{
   font-size: 1em;
-  max-height: 16vh;
+  max-height: min-content;
   overflow: auto;
   margin-bottom: 16px;
 }
@@ -289,6 +293,7 @@
   margin: 0;
   padding: 0;
   padding-left: .25em;
+  max-height: 24vh;
 }
 
 #translation-panel ul li{
@@ -360,26 +365,14 @@
   flex-direction: column;
   gap: 8px;
   margin-bottom: 16px;
-  max-height: 70vh;
 }
 
-.translate-compounds-container > div:first-child{
-  max-height: calc(24vh + 4em);
-}
-
-.translate-compounds-container > div:first-child .translate-comp-entry-container{
-  max-height: 24vh;
-}
-
-.translate-compounds{
-  max-height: 20vh;
-}
 .translate-comp-entry-container{
   display: flex;
   gap: .3em;
   padding-right: 2px;
   flex-wrap: wrap;
-  max-height: 14vh;
+  max-height: 24vh;
   overflow-y: auto;
   padding: 6px 0;
 }
@@ -473,6 +466,7 @@ opacity: 85%;
 .translation-explore-panels{ 
   display: flex;
   justify-content: center;
+  max-height: 1;
   flex: 1;
 }
 .translation-explore-controls{
@@ -513,12 +507,11 @@ opacity: 85%;
 }
 
 /* Example sentences */
-.translate-sentences {
+.translate-sentences{
   flex: 1;
   height: 100%;
   display: flex;
   flex-direction: column;
-  max-height: 24vh;
 }
 .translate-sentences .sentences-body{
   overflow-y: auto;
@@ -606,8 +599,12 @@ opacity: 85%;
 .translation-explore{
   grid-area: explore;
 }
+.translation-panel-expand .translate-results,
+.translation-panel-expand-2 .translate-results{
+  display: grid;
+}
 
-.translate-results{
+.translate-results.translation-panel-expand{
   grid-template-areas: "definitions" "compounds" "explore";
 }
 
@@ -636,6 +633,16 @@ opacity: 85%;
 #translation-panel.translation-panel-expand-2 .translate-compounds-container{
   overflow: auto;
   margin-right: .85em;
+
+}
+#translation-panel.translation-panel-expand .translation-definitions,
+#translation-panel.translation-panel-expand-2 .translation-definitions{
+  max-height: 40vh;
+}
+
+#translation-panel.translation-panel-expand .translation-explore-panels,
+#translation-panel.translation-panel-expand-2 .translation-explore-panels{
+  max-height: 40vh;
 }
 
 .tr-reduced-size-5{
@@ -660,22 +667,10 @@ opacity: 85%;
   padding-bottom: 4px;
 }
 
-#translation-panel.translation-panel-expand .translation-definitions{
-  max-height: 24vh;
-}
 
 #translation-panel.translation-panel-expand .translate-comp{
   margin: 2px 0;
 }
-
-#translation-panel.translation-panel-expand .translation-definitions{
-  max-height: 25vh;
-}
-
-#translation-panel.translation-panel-expand .sentences-body{
-  max-height: 30vh;
-}
-
 
 #translation-panel.translation-panel-expand .translate-stroke-order{
   max-height: 256px;
@@ -704,17 +699,5 @@ opacity: 85%;
 #translation-panel.translation-panel-expand-2 .translate-stroke-order  {
   max-height: 288px;
   max-width: 288px;
-}
-
-#translation-panel.translation-panel-expand-2 .translation-definitions{
-  max-height: 30vh;
-}
-
-#translation-panel.translation-panel-expand-2 .sentences-body{
-  max-height: 35vh;
-}
-
-#translation-panel.translation-panel-expand-2 .translate-selectedText{
-  max-width: 45vw;
 }
 /* ------- */

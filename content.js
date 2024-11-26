@@ -385,11 +385,6 @@ function resizeWindow(change){
     DOMsize_decrease.className = ""
     translationPanel.classList.add("translation-panel-expand-2")
   }
-
-  if(windowSize > 0 && $('.translation-definitions')){
-    let height = $('.translation-definitions').outerHeight() + $('translation-explore').outerHeight()
-    $('.translate-compounds-container').css('max-height', height);
-  }
 }
 
 function handleOutsideClick(event) {
@@ -703,8 +698,9 @@ async function processSentences(data, queryUrl){
       const $single = $('<span></span').addClass('sentences-single')
 
       const $top = $('<div></div>').addClass('sentences-pinyin')
-      if(entry.pinyin.length === 0)
-        $top.append($('<wbr>'))
+      if(entry.pinyin.length === 0){
+        $top.append($('<wbr>'));
+      }
       else
         $top.text(entry.pinyin)
 
