@@ -76,21 +76,25 @@ async function performVersionCheck() {
             if (chrome.runtime.lastError) {
                 return reject(chrome.runtime.lastError);
             }
-            resolve(result.versionData);
+            resolve(result ? result.versionData : null);
         });
       });
 
-      if(!storedVersionData || !storedVersionData.Word_Bank || storedVersionData.Word_Bank < currentVersionData.Word_Bank){
+      //version 1 is when sync storage has been implemented.
+      if(!storedVersionData || !storedVersionData.Word_Bank || storedVersionData.Word_Bank < 1){
         console.log("Updating version")
         //clear cache
         console.log("Clearing cache")
         await chrome.storage.local.set({cache: {}})
-        console.log("Syncing deprecated local word bank to cloud")
         const {wordbank} = await chrome.storage.local.get('wordbank')
-        for (const [key, value] of Object.entries(wordbank)) {
-          console.log(key)
-          await saveSyncWordbank(key, value)
+        if(wordbank){
+          console.log("Syncing deprecated local word bank to cloud")
+          for (const [key, value] of Object.entries(wordbank)) {
+            console.log(key)
+            await saveSyncWordbank(key, value)
+          }
         }
+       
       }
       await new Promise((resolve, reject) => {
         const updatedVersionData = {
