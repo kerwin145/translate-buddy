@@ -3,7 +3,7 @@
   border-radius: 0;
 }
 
-#translation-panel{
+#translation-panel, div, p{
   font-family: Arial, Helvetica, sans-serif;
 }
 
@@ -100,7 +100,7 @@
   margin: 0;
   margin-bottom: 4px;
   gap: 6px;
-  padding: 0;
+  padding: 0 0 2px 0;
 }
 
 .translate-noresults{
@@ -256,7 +256,7 @@
 
 .translate-results > *{
   /* border: 1px solid; */
-  flex: 1 1 40vh; /* Start with 40vh, grow and shrink */
+  flex: 1 1 60vh; /* Start with 40vh, grow and shrink */
   max-height: min-content; /* Prevent children from growing beyond their content */
   overflow: auto;
 }
@@ -454,6 +454,7 @@ opacity: 85%;
 .translation-explore-controls{
   display: flex;
   gap: 6px;
+  padding-bottom: 2px;
   border-bottom: 1px solid silver;
   margin-bottom: 4px;
 }
@@ -570,50 +571,47 @@ opacity: 85%;
 
 
 /* --- Resizing styles --- */
-.translation-definitions{
-  grid-area: definitions;
+.translation-panel-expand .translate-results, .translation-panel-expand-2 .translate-results{
+  flex-wrap: wrap;
+  gap: 0 1rem;
 }
 
-.translate-compounds{
-  grid-area: compounds;
+.translation-panel-expand .translate-results > div, .translation-panel-expand-2 .translate-results > div{
+  width: 50%;
 }
 
-.translation-explore{
-  grid-area: explore;
-}
-/* .translation-panel-expand .translate-results,
-.translation-panel-expand-2 .translate-results{
-  display: grid;
-} */
-
-.translate-results.translation-panel-expand{
-  grid-template-areas: "definitions" "compounds" "explore";
+.translation-panel-expand .header-definitions, .translation-panel-expand-2 .header-definitions{
+  order: 1;
 }
 
-#translation-panel.translation-panel-expand .translate-results, 
-#translation-panel.translation-panel-expand-2 .translate-results{
-  grid-template-areas: 
-  "definitions compounds"
-  "explore compounds";
-  column-gap: 32px;
-  grid-template-columns: 1fr 1fr;
-  grid-template-rows: min-content 1fr;
+.translation-panel-expand .translation-definitions, .translation-panel-expand-2 .translation-definitions{
+  order: 2;
 }
 
-#translation-panel.translation-panel-expand .skew-compound-container, 
-#translation-panel.translation-panel-expand-2 .skew-compound-container{
-  grid-template-columns: 1fr 2fr;
+.translation-panel-expand .header-compounds, .translation-panel-expand-2 .header-compounds{
+  order: 5;
 }
 
-.tr-reduced-size-5{
+.translation-panel-expand .translate-compounds, .translation-panel-expand-2 .translate-compounds{
+  order: 6;
+}
+
+.translation-panel-expand .translation-explore-controls, .translation-panel-expand-2 .translation-explore-controls{
+  order: 3;
+}
+.translation-panel-expand .translation-explore, .translation-panel-expand-2 .translation-explore{
+  order: 4;
+}
+
+#translation-panel.translation-panel-expand-2 .tr-reduced-size-5{
   font-size: 1.5em;
 }
 
-.tr-reduced-size-6{
+#translation-panel.translation-panel-expand-2 .tr-reduced-size-6{
   font-size: 1.2em;
 }
 
-.tr-reduced-size-max{
+#translation-panel.translation-panel-expand-2 .tr-reduced-size-max{
   font-size: 1em;
 }
 

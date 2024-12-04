@@ -216,7 +216,7 @@ function showTranslationPanel(loading = false) {
   $.each(definitions, function(index, d) {
       $DOMdefinitionsList.append(`<li>${d}</li>`);
   });
-  const $header = $('<h3></h3>').text("Definitions");
+  const $header = $('<h3></h3>').text("Definitions").addClass("header-definitions");
   $DOMdefinitions.append($DOMdefinitionsList)
   $(DOMresults).append($header, $DOMdefinitions)
     
@@ -538,6 +538,7 @@ function makeNavChip(parent){
 // @param display mode: if true, it means we are generating a compound list html for "compounds used in"
 function makeCompoundListHTML(parent, compounds, blockTitle, blockNoResultsText, displayMode = false){
    let DOMcompounds_header = document.createElement('h3')
+  DOMcompounds_header.className = 'header-compounds'
   DOMcompounds_header.innerHTML = `${blockTitle}`
   parent.appendChild(DOMcompounds_header)
   
