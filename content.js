@@ -170,6 +170,7 @@ function showTranslationPanel(loading = false) {
 
     let DOMcompounds = document.createElement('div')
     DOMcompounds.className = 'translate-compounds-container'
+    DOMresults.appendChild(DOMcompounds)
 
     DOMresults.innerHTML = `<div class = "translate-noresults"> Not in my dictionary, sorry! :-( </div>`
     if(tr_data.text.length > 2)
@@ -178,7 +179,6 @@ function showTranslationPanel(loading = false) {
 
     $(".translate-results").addClass('skew-compound-container')
 
-    DOMresults.appendChild(DOMcompounds)
     return
   }
 
@@ -217,20 +217,15 @@ function showTranslationPanel(loading = false) {
       $DOMdefinitionsList.append(`<li>${d}</li>`);
   });
   const $header = $('<h3></h3>').text("Definitions");
-  $DOMdefinitions.append($header)
   $DOMdefinitions.append($DOMdefinitionsList)
-  $(DOMresults).append($DOMdefinitions)
+  $(DOMresults).append($header, $DOMdefinitions)
     
   if(tr_data.entries.length > 1)
     makeNavChip($header.get(0))
 
-  let DOMcompounds = document.createElement('div')
-  DOMcompounds.className = 'translate-compounds-container'
-
   if(tr_data.text.length > 2)
-    makeCompoundListHTML(DOMcompounds, tr_data.subCompounds, `Compounds used in ${trimText(tr_data.text)}`, `No compound words used in ${trimText(tr_data.text)} found!`, true)
-  makeCompoundListHTML(DOMcompounds, tr_data.compounds, `Compounds using ${trimText(tr_data.text)}`, `No compound words using ${trimText(tr_data.text)} found!`)
-  DOMresults.appendChild(DOMcompounds)
+    makeCompoundListHTML(DOMresults, tr_data.subCompounds, `Compounds used in ${trimText(tr_data.text)}`, `No compound words used in ${trimText(tr_data.text)} found!`, true)
+  makeCompoundListHTML(DOMresults, tr_data.compounds, `Compounds using ${trimText(tr_data.text)}`, `No compound words using ${trimText(tr_data.text)} found!`)
 
   const DOMstrokeOrderContainer = document.createElement('a')
   DOMstrokeOrderContainer.setAttribute("href", `https://www.strokeorder.com/chinese/${tr_data.text}`)
@@ -238,7 +233,6 @@ function showTranslationPanel(loading = false) {
   const DOMstrokeOrder = document.createElement('img')
   DOMstrokeOrder.src = tr_data.strokeImgUrl
   DOMstrokeOrder.classList.add('translate-stroke-order')
-
 
   DOMstrokeOrderContainer.appendChild(DOMstrokeOrder)
 
@@ -465,7 +459,7 @@ function makeExploreBar(parent, children, titles){
     DOMexplorePanel.classList.add('translation-shrink-explore')
   }
 
-  DOMexplore.appendChild(DOMexploreControls)
+  parent.appendChild(DOMexploreControls)
   DOMexplore.appendChild(DOMexplorePanel)
   parent.appendChild(DOMexplore)
 
@@ -543,6 +537,10 @@ function makeNavChip(parent){
 
 // @param display mode: if true, it means we are generating a compound list html for "compounds used in"
 function makeCompoundListHTML(parent, compounds, blockTitle, blockNoResultsText, displayMode = false){
+   let DOMcompounds_header = document.createElement('h3')
+  DOMcompounds_header.innerHTML = `${blockTitle}`
+  parent.appendChild(DOMcompounds_header)
+  
   let DOMcompounds = document.createElement('div')
   parent.appendChild(DOMcompounds)
   DOMcompounds.className = "translate-compounds"
@@ -555,12 +553,8 @@ function makeCompoundListHTML(parent, compounds, blockTitle, blockNoResultsText,
     return
   }
 
-  let DOMcompounds_header = document.createElement('h3')
-  DOMcompounds_header.innerHTML = `${blockTitle}`
   let DOMcompounds_elements = document.createElement('div')
   DOMcompounds_elements.className = `translate-comp-entry-container`
-
-  DOMcompounds.appendChild(DOMcompounds_header)
   DOMcompounds.appendChild(DOMcompounds_elements)
 
   for(let compound of compounds){
@@ -589,6 +583,7 @@ function makeCompoundListHTML(parent, compounds, blockTitle, blockNoResultsText,
       DOMcomp_definitions.append(DOM_comp_def)
     }
   }
+
 }
 
 function isChineseChar(c){

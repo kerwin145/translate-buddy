@@ -96,6 +96,7 @@
   flex-wrap: wrap;
   font-size: 1.25em;
   font-weight: normal;
+  line-height: 1.15;
   margin: 0;
   margin-bottom: 4px;
   gap: 6px;
@@ -247,17 +248,18 @@
 .translate-results{
   margin: auto;
   width: 100%;
+  overflow: auto;
   display: flex;
   flex-direction: column;
   max-height: 80vh;
 }
 
-/* .translate-results > *{
-  flex: 1 1 30vh;
-  min-height: 0;
-  flex: 1;
-  max-height: min-content;
-} */
+.translate-results > *{
+  /* border: 1px solid; */
+  flex: 1 1 40vh; /* Start with 40vh, grow and shrink */
+  max-height: min-content; /* Prevent children from growing beyond their content */
+  overflow: auto;
+}
 
 .translate-header{
   display: grid;
@@ -285,7 +287,6 @@
   font-size: 1em;
   max-height: min-content;
   overflow: auto;
-  margin-bottom: 16px;
 }
 
 #translation-panel ul{
@@ -293,7 +294,6 @@
   margin: 0;
   padding: 0;
   padding-left: .25em;
-  max-height: 24vh;
 }
 
 #translation-panel ul li{
@@ -356,40 +356,23 @@
   text-overflow: ellipsis;
 }
 
-.translate-comp{
-  margin-bottom: .3em;
-}
-
-.translate-compounds-container{
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-bottom: 16px;
+.translate-compounds, .translation-definitions{
+  margin-bottom: 12px;
 }
 
 .translate-comp-entry-container{
   display: flex;
-  gap: .3em;
+  gap: .4em;
   padding-right: 2px;
   flex-wrap: wrap;
-  max-height: 24vh;
   overflow-y: auto;
   padding: 6px 0;
-}
-
-
-.translate-comp-entry-container::-webkit-scrollbar, 
-.translation-definitions::-webkit-scrollbar, 
-.sentences-body::-webkit-scrollbar,
-.translate-compounds-container::-webkit-scrollbar
-{
-  width: 8px;
 }
 
 .translate-comp-entry-container::-webkit-scrollbar:hover, 
 .translation-definitions::-webkit-scrollbar:hover, 
 .sentences-body::-webkit-scrollbar:hover,
-.translate-compounds-container::-webkit-scrollbar:hover
+.translate-compounds::-webkit-scrollbar:hover
 {
   cursor: pointer;
 }
@@ -397,7 +380,7 @@
 .translate-comp-entry-container::-webkit-scrollbar-thumb, 
 .translation-definitions::-webkit-scrollbar-thumb, 
 .sentences-body::-webkit-scrollbar-thumb,
-.translate-compounds-container::-webkit-scrollbar-thumb
+.translate-compounds::-webkit-scrollbar-thumb
 {
 background: rgb(192,192,192);
 border-radius: 4px;
@@ -407,7 +390,7 @@ opacity: 85%;
 .translate-comp-entry-container::-webkit-scrollbar-track, 
 .translation-definitions::-webkit-scrollbar-track, 
 .sentences-body::-webkit-scrollbar-track,
-.translate-compounds-container::-webkit-scrollbar-track
+.translate-compounds::-webkit-scrollbar-track
 {
 border-radius: 10px;
 background: rgb(232,232,232);
@@ -466,14 +449,13 @@ opacity: 85%;
 .translation-explore-panels{ 
   display: flex;
   justify-content: center;
-  max-height: 1;
   flex: 1;
 }
 .translation-explore-controls{
   display: flex;
   gap: 6px;
   border-bottom: 1px solid silver;
-  margin-bottom: 16px;
+  margin-bottom: 4px;
 }
 
 #translation-panel:not(.translation-panel-expand):not(.translation-panel-expand-2) .translation-explore-panels.translation-shrink-explore{
@@ -488,7 +470,7 @@ opacity: 85%;
   outline: none;
   color: indigo;
   font-size: 1em;
-  line-height: 1;
+  line-height: 1.15;
 }
 
 .translation-explore-controls button:nth-child(2){
@@ -592,17 +574,17 @@ opacity: 85%;
   grid-area: definitions;
 }
 
-.translate-compounds-container{
+.translate-compounds{
   grid-area: compounds;
 }
 
 .translation-explore{
   grid-area: explore;
 }
-.translation-panel-expand .translate-results,
+/* .translation-panel-expand .translate-results,
 .translation-panel-expand-2 .translate-results{
   display: grid;
-}
+} */
 
 .translate-results.translation-panel-expand{
   grid-template-areas: "definitions" "compounds" "explore";
@@ -621,28 +603,6 @@ opacity: 85%;
 #translation-panel.translation-panel-expand .skew-compound-container, 
 #translation-panel.translation-panel-expand-2 .skew-compound-container{
   grid-template-columns: 1fr 2fr;
-}
-
-
-#translation-panel.translation-panel-expand .translate-comp-entry-container, 
-#translation-panel.translation-panel-expand-2 .translate-comp-entry-container{
-  max-height: initial;
-}
-
-#translation-panel.translation-panel-expand .translate-compounds-container, 
-#translation-panel.translation-panel-expand-2 .translate-compounds-container{
-  overflow: auto;
-  margin-right: .85em;
-
-}
-#translation-panel.translation-panel-expand .translation-definitions,
-#translation-panel.translation-panel-expand-2 .translation-definitions{
-  max-height: 40vh;
-}
-
-#translation-panel.translation-panel-expand .translation-explore-panels,
-#translation-panel.translation-panel-expand-2 .translation-explore-panels{
-  max-height: 40vh;
 }
 
 .tr-reduced-size-5{
