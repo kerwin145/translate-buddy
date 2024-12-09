@@ -217,15 +217,20 @@ function showTranslationPanel(loading = false) {
       $DOMdefinitionsList.append(`<li>${d}</li>`);
   });
   const $header = $('<h3></h3>').text("Definitions").addClass("header-definitions");
+  $(DOMresults).append($header)
   $DOMdefinitions.append($DOMdefinitionsList)
-  $(DOMresults).append($header, $DOMdefinitions)
+  $(DOMresults).append($DOMdefinitions)
     
   if(tr_data.entries.length > 1)
     makeNavChip($header.get(0))
 
+  let DOMcompounds = document.createElement('div')
+  DOMcompounds.className = 'translate-compounds-container'
+
   if(tr_data.text.length > 2)
-    makeCompoundListHTML(DOMresults, tr_data.subCompounds, `Compounds used in ${trimText(tr_data.text)}`, `No compound words used in ${trimText(tr_data.text)} found!`, true)
-  makeCompoundListHTML(DOMresults, tr_data.compounds, `Compounds using ${trimText(tr_data.text)}`, `No compound words using ${trimText(tr_data.text)} found!`)
+    makeCompoundListHTML(DOMcompounds, tr_data.subCompounds, `Compounds used in ${trimText(tr_data.text)}`, `No compound words used in ${trimText(tr_data.text)} found!`, true)
+  makeCompoundListHTML(DOMcompounds, tr_data.compounds, `Compounds using ${trimText(tr_data.text)}`, `No compound words using ${trimText(tr_data.text)} found!`)
+  DOMresults.appendChild(DOMcompounds)
 
   const DOMstrokeOrderContainer = document.createElement('a')
   DOMstrokeOrderContainer.setAttribute("href", `https://www.strokeorder.com/chinese/${tr_data.text}`)
@@ -455,12 +460,9 @@ function makeExploreBar(parent, children, titles){
   DOMexploreControls.classList.add('translation-explore-controls')
   const DOMexplorePanel = document.createElement('div')
   DOMexplorePanel.classList.add('translation-explore-panels')
-  if (window.innerHeight <= 750) {
-    DOMexplorePanel.classList.add('translation-shrink-explore')
-  }
 
-  parent.appendChild(DOMexploreControls)
   DOMexplore.appendChild(DOMexplorePanel)
+  parent.appendChild(DOMexploreControls)
   parent.appendChild(DOMexplore)
 
   //populate content
@@ -537,11 +539,6 @@ function makeNavChip(parent){
 
 // @param display mode: if true, it means we are generating a compound list html for "compounds used in"
 function makeCompoundListHTML(parent, compounds, blockTitle, blockNoResultsText, displayMode = false){
-   let DOMcompounds_header = document.createElement('h3')
-  DOMcompounds_header.className = 'header-compounds'
-  DOMcompounds_header.innerHTML = `${blockTitle}`
-  parent.appendChild(DOMcompounds_header)
-  
   let DOMcompounds = document.createElement('div')
   parent.appendChild(DOMcompounds)
   DOMcompounds.className = "translate-compounds"
@@ -554,8 +551,12 @@ function makeCompoundListHTML(parent, compounds, blockTitle, blockNoResultsText,
     return
   }
 
+  let DOMcompounds_header = document.createElement('h3')
+  DOMcompounds_header.innerHTML = `${blockTitle}`
   let DOMcompounds_elements = document.createElement('div')
   DOMcompounds_elements.className = `translate-comp-entry-container`
+
+  DOMcompounds.appendChild(DOMcompounds_header)
   DOMcompounds.appendChild(DOMcompounds_elements)
 
   for(let compound of compounds){
@@ -584,7 +585,6 @@ function makeCompoundListHTML(parent, compounds, blockTitle, blockNoResultsText,
       DOMcomp_definitions.append(DOM_comp_def)
     }
   }
-
 }
 
 function isChineseChar(c){
@@ -721,7 +721,7 @@ async function processSentences(data, queryUrl){
     $sentencesBlockContainer.append($sentenceBlock)
   }
   
-  const $sentences_control = $('<div></div').addClass('sentences-control')
+  const $sentences_control = $('<div></div>').addClass('sentences-control')
   const $moreLink = $('<a></a>').addClass('sentences-more')
   $moreLink.attr('href', queryUrl).attr('target', '_blank')
   $moreLink.text("More!")
@@ -754,10 +754,13 @@ async function processSentences(data, queryUrl){
 
   $sentences_control.append($moreLink)
   $sentences_control.append($toggleContainer)
+  
+  const $sentenceFooter = $('<div></div>').attr({class: 'sentence-footer'})
 
   $(DOMsentences).append($sentencesBlockContainer)
-  $(DOMsentences).append($sentences_control)
-  $(DOMsentences).append($attribution)
+  $($sentenceFooter).append($sentences_control)
+  $($sentenceFooter).append($attribution)
+  $(DOMsentences).append($sentenceFooter)
 }
 
 function waitForElement(selector, timeout = 4000) {
