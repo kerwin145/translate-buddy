@@ -465,6 +465,7 @@ opacity: 85%;
 .translation-explore-panels{ 
   display: flex;
   justify-content: center;
+  height: 100%;
 }
 .translation-explore-controls{
   display: flex;
@@ -594,7 +595,7 @@ opacity: 85%;
                        "definitions compounds"
                        "explore-controls compounds"
                        "explore compounds";
-  grid-template-columns: calc(60% - 2ch - 8px) 1fr;
+  grid-template-columns: repeat(2, minmax(auto, 320px));
   grid-template-rows: auto auto auto 1fr;
 }
 
@@ -661,8 +662,8 @@ opacity: 85%;
 }
 
 #translation-panel.translation-panel-expand .translate-stroke-order{
-  max-height: 216px;
-  max-width: 216px;
+  max-height: max(216px, 100%);
+  max-width: max(216px, 100%);
 }
 
 #translation-panel.translation-panel-expand .translate-sentences .sentences-line{
@@ -674,9 +675,6 @@ opacity: 85%;
 }
 
 /* Even biggerr */
-.translation-panel-expand-2 .translate-results{
-  grid-template-columns: calc(65% - 2ch - 8px) 1fr;
-}
 #translation-panel.translation-panel-expand-2{
   max-width: max(60vw, min(500px, 100vw));
   font-size: 24px;
@@ -684,8 +682,8 @@ opacity: 85%;
 }
 
 #translation-panel.translation-panel-expand-2 .translate-stroke-order  {
-  max-height: 256px;
-  max-width: 256px;
+  max-height: max(256px, 100%);
+  max-width: max(256px, 100%);
 }
 
 /* Resize edge cases */
