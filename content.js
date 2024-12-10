@@ -170,9 +170,9 @@ function showTranslationPanel(loading = false) {
 
     let DOMcompounds = document.createElement('div')
     DOMcompounds.className = 'translate-compounds-container'
-    DOMresults.appendChild(DOMcompounds)
-
+    
     DOMresults.innerHTML = `<div class = "translate-noresults"> Not in my dictionary, sorry! :-( </div>`
+    DOMresults.appendChild(DOMcompounds)
     if(tr_data.text.length > 2)
       makeCompoundListHTML(DOMcompounds, tr_data.subCompounds, `Compounds used in ${trimText(tr_data.text)}`, `No compound words used in ${trimText(tr_data.text)} found!`, true)
     makeCompoundListHTML(DOMcompounds, tr_data.compounds, `Compounds using ${trimText(tr_data.text)}`, `No compound words using ${trimText(tr_data.text)} found!`)
@@ -231,6 +231,9 @@ function showTranslationPanel(loading = false) {
     makeCompoundListHTML(DOMcompounds, tr_data.subCompounds, `Compounds used in ${trimText(tr_data.text)}`, `No compound words used in ${trimText(tr_data.text)} found!`, true)
   makeCompoundListHTML(DOMcompounds, tr_data.compounds, `Compounds using ${trimText(tr_data.text)}`, `No compound words using ${trimText(tr_data.text)} found!`)
   DOMresults.appendChild(DOMcompounds)
+  if ($('.translate-compounds').length == 1) {
+    $('.translate-compounds h3').addClass('tr-sticky');
+  }
 
   const DOMstrokeOrderContainer = document.createElement('a')
   DOMstrokeOrderContainer.setAttribute("href", `https://www.strokeorder.com/chinese/${tr_data.text}`)
