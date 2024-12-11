@@ -758,7 +758,7 @@ async function processSentences(data, queryUrl){
   $sentences_control.append($moreLink)
   $sentences_control.append($toggleContainer)
   
-  const $sentenceFooter = $('<div></div>').attr({class: 'sentence-footer'})
+  const $sentenceFooter = $('<div></div>').attr({class: 'sentences-footer'})
 
   $(DOMsentences).append($sentencesBlockContainer)
   $($sentenceFooter).append($sentences_control)

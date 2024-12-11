@@ -260,12 +260,13 @@
   overflow: auto;
   display: flex;
   flex-direction: column;
-  max-height: 80vh;
+  max-height: 78vh;
 }
 
 .translate-compounds-container{
   gap: 1rem;
   margin-bottom: 8px;
+  max-height: 40vh;
 }
 
 .translate-results > *, .translate-compounds-container > *{
@@ -384,14 +385,14 @@
 
 .translate-comp-entry-container::-webkit-scrollbar,
 .translation-definitions::-webkit-scrollbar, 
-.sentences-body::-webkit-scrollbar,
+.translation-explore::-webkit-scrollbar,
 .translate-compounds::-webkit-scrollbar {
   width: 8px;
 }
 
 .translate-comp-entry-container::-webkit-scrollbar:hover, 
 .translation-definitions::-webkit-scrollbar:hover, 
-.sentences-body::-webkit-scrollbar:hover,
+.translation-explore::-webkit-scrollbar:hover,
 .translate-compounds::-webkit-scrollbar:hover
 {
   cursor: pointer;
@@ -399,7 +400,7 @@
 
 .translate-comp-entry-container::-webkit-scrollbar-thumb, 
 .translation-definitions::-webkit-scrollbar-thumb, 
-.sentences-body::-webkit-scrollbar-thumb,
+.translation-explore::-webkit-scrollbar-thumb,
 .translate-compounds::-webkit-scrollbar-thumb
 {
 background: rgb(192,192,192);
@@ -409,7 +410,7 @@ opacity: 85%;
 
 .translate-comp-entry-container::-webkit-scrollbar-track, 
 .translation-definitions::-webkit-scrollbar-track, 
-.sentences-body::-webkit-scrollbar-track,
+.translation-explore::-webkit-scrollbar-track,
 .translate-compounds::-webkit-scrollbar-track
 {
 border-radius: 10px;
@@ -503,10 +504,8 @@ opacity: 85%;
 }
 
 /* Example sentences */ 
-.sentence-footer{
-  position: sticky;
-  bottom: 0;
-  background: aliceblue;
+.translate-sentences{
+  width: 100%;
 }
 
 .translate-sentences .sentences-body{
@@ -515,8 +514,11 @@ opacity: 85%;
 .translate-sentences .sentences-block{
   display: flex;
   flex-direction: column;
-  margin-bottom: .5em;
   border-bottom: 1px dashed silver;
+}
+
+.translate-sentences .sentences-block:not(:last-child){
+  margin-bottom: .5em;
 }
 
 .translate-sentences .sentences-pinyin{
@@ -541,6 +543,12 @@ opacity: 85%;
   font-size: 1em;
   font-style: italic;
   margin-bottom: 2px;
+}
+
+.translate-sentences .sentences-footer{
+  position: sticky;
+  bottom: 0;
+  background-color: aliceblue;
 }
 .translate-sentences .sentences-more{
   font-size: 1em;
