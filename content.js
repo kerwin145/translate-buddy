@@ -276,10 +276,14 @@ function closeTranslationPanel() {
 async function showWordbankPanel(){ 
   chrome.runtime.sendMessage({action: "kill-translation"})
   const res = await chrome.storage.sync.get('wordbank');
-  let bank = []
+  let bank_words = []
   if(res && res.wordbank){
-    bank = Object.keys(res.wordbank)
+    bank_words = Object.keys(res.wordbank)
   }
+
+  console.log("DEBUG WORDBANK")
+  console.log(res.wordbank)
+  chrome.runtime.sendMessage({action: "sort-wordbank"})
 
   let preHtml = 
   `  
@@ -292,8 +296,8 @@ async function showWordbankPanel(){
   `
     <div id ="tr-wordbank">
       <h3>Word Bank</h3>
-      <div id = 'wordbank-grid'>  
-        ${bank.length == 0 ?
+      <div id = 'wordbank-container'>  
+        ${bank_words.length == 0 ?
          `<div>No terms saved to your word bank ... yet! </div>`
           :
           `<div id = 'wordbank-wordlist'></div>
@@ -307,10 +311,10 @@ async function showWordbankPanel(){
 
   $('#word-bank-back').on('click', ()=>{sendQuery(previousSearchTerm)})
 
-  if(bank.length == 0) return
+  if(bank_words.length == 0) return
 
   var wordListContainer = $('#wordbank-wordlist')
-  bank.forEach((term, idx) => {
+  bank_words.forEach((term, idx) => {
     let $button = $('<button>', { class: `wordbank-wordlist-row ${idx == 0 ? "tr-wordbank-selected" : ""}`, text: term})
     wordListContainer.append($button)
     $button.on('click', ()=>{
@@ -320,9 +324,9 @@ async function showWordbankPanel(){
     })
   })
 
-  if(bank.length > 0){
-    //get data to populate 
-    chrome.runtime.sendMessage({action: "translate-basic-request", text: bank[0]})
+  if(bank_words.length > 0){
+    //automatically search the first word 
+    chrome.runtime.sendMessage({action: "translate-basic-request", text: bank_words[0]})
   }
 
 }
@@ -590,6 +594,7 @@ function makeCompoundListHTML(parent, compounds, blockTitle, blockNoResultsText,
   }
 }
 
+// MACRO where?
 function isChineseChar(c){
   return c.codePointAt(0) >= 0x4E00 && c.codePointAt(0) <= 0x9FFF
 }

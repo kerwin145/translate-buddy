@@ -1,5 +1,6 @@
 importScripts('saveSync.js')
 // Get data from local storage
+/*
 chrome.storage.local.get(null).then((localData) => {
   console.log("Local Storage:", localData);
 
@@ -12,7 +13,7 @@ chrome.storage.local.get(null).then((localData) => {
 }).catch((error) => {
   console.error("Error fetching local storage:", error);
 });
-
+*/
 
 //initializing this here to show structure. Who needs object oriented programming?
 tr_data = {text: "", HSK_levels: null, page: null, entries: [], compounds: [], subCompounds: [], strokeImgUrl: "", useImgCache: false, sentenceData: null, sentenceQuery: null, history: {}}
@@ -40,6 +41,9 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
   } 
   else if (action === "translate-basic-request"){
     processTranslationBasic(request.text)
+  }
+  else if(action === "sort-wordbank"){
+    sortForWordBank()
   }
   else if(action === "setCache"){
     updateCache(data.key, data.value)
@@ -175,7 +179,7 @@ async function processTranslation(text, updateHistoryAction = "NEW"){
 }
 
 async function processTranslationBasic(text){
-  await loadDictionaryData(text, true)
+  await loadDictionaryData(text, basic = true)
 
   text = text.replace(/\s/g, "")
   const sentenceQuery = `https://www.purpleculture.net/sample_sentences/?word=${text}`
@@ -270,6 +274,19 @@ function searchWordAndProcessHSK(text){
   levels = levels.sort((a,b) => a-b)
   tr_data.HSK_levels = levels.join(", ")
   return entries
+}
+
+ 
+async function sortForWordBank(sortMode = "default"){
+  await loadDictionaryData(null, basic = true)
+  console.log("Sorting wordbank")
+  const res = await chrome.storage.sync.get('wordbank') || [];
+  if (!res || res.wordbank.length == 0){
+    return []
+  }
+
+  const entries = Object.keys(res.wordbank).map(word => dictionaryDataIndexed.get(word)).filter(Boolean) //aka filter out falsey values
+  console.log(entries)
 }
 
 function searchAdjWords(word){

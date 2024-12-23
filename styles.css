@@ -84,7 +84,7 @@
   position: fixed;
   top: 6px;
   right: 6px;
-  padding: 18px calc(1rem + 16px);
+  padding: 16px calc(1rem + 16px);
   color: indigo;
   background-color: rgb(240, 248, 255);
   border-radius: 10px;
@@ -140,7 +140,7 @@
 .translate-panel-nav-wrapper{
   position: absolute;
   top: 0;
-  left: -.6em;
+  left: -.75em;
   padding: 16px 2px;
   padding-left: 4px;
   background-color: rgb(240, 248, 255);
@@ -594,7 +594,7 @@ opacity: 85%;
 #translation-panel.translation-panel-expand,
 #translation-panel.translation-panel-expand-2 
 {
-  padding: 18px 18px 8px 18px; 
+  padding: 16px 16px 8px 16px; 
 }
 .translation-panel-expand .translate-results, 
 .translation-panel-expand-2 .translate-results{
@@ -606,6 +606,12 @@ opacity: 85%;
                        "explore compounds";
   grid-template-columns: repeat(2, minmax(auto, 320px));
   grid-template-rows: auto auto auto 1fr;
+}
+
+.translation-panel-expand.translate-results:has(.translate-no-compounds),
+.translation-panel-expand-2.translate-results:has(.translate-no-compounds){
+  grid-template-columns: 1fr min-content;
+
 }
 
 #translation-panel.translation-panel-expand{

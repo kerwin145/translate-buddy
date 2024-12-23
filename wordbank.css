@@ -4,6 +4,7 @@
 
 #tr-wordbank button{
     background-color: transparent;
+    color: indigo;
     border: none;
     padding: 0;
     margin: 0;
@@ -12,20 +13,23 @@
     cursor: pointer;
 }
 
-#wordbank-grid{
-    display: grid;
-    grid-template-columns: auto 1fr;
+#wordbank-container{
+    display: flex;
     gap: 16px;
     margin-right: .85em;
 }
 
 #tr-wordbank h3{
+    position: relative;
+    z-index: 2;
+    background-color: aliceblue;
     margin-bottom: 16px;
     margin-right: 32px;
     border-bottom: 1px solid rgba(0,0,0,.25);
 }
 
 #wordbank-wordlist{
+    flex: 1 1 50%;
     display: flex;
     flex-direction: column;
     gap: 1em;
@@ -35,6 +39,10 @@
     max-height: 65vh;
     overflow: auto;
     padding-bottom: 1px;
+}
+
+#wordbank-content{
+    flex: 2 1 50%;
 }
 
 .wordbank-delete{
