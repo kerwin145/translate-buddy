@@ -3,7 +3,7 @@
   border-radius: 0;
 }
 
-#translation-panel, div, p{
+#translation-panel div, #translation-panel p{
   font-family: Arial, Helvetica, sans-serif;
 }
 
@@ -149,6 +149,10 @@
   /* border-right: 1px dashed rgba(0,0,0,.1); */
   transition: width .3s ease, height .3s ease;
   font-size: 1.2em;
+}
+
+.translate-panel-nav-wrapper p{
+  line-height: 1;
 }
 
 .translate-panel-nav-wrapper:hover p{

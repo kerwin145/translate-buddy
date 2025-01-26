@@ -294,7 +294,6 @@ function searchAdjWords(word){
   let out = dictionaryData.filter(
     entry => (!(entry.simplified.length === 1 || entry.simplified === word || entry.traditional === word))
             && (entry.simplified.includes(word) || entry.traditional.includes(word)))
-  // console.log(out)
   return out
 }
 

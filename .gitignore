@@ -1,1 +1,10 @@
 cedict_ts.u8
+scripts/archived
+scripts/error_terms.txt
+scripts/.env
+scripts/terms.txt
+scripts/sentence_db.txt
+scripts/sentence_db_old.txt
+scripts/sentence_db.txt
+scripts/sentence_db.json
+scripts/test.py
