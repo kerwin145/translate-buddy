@@ -10,10 +10,12 @@ DELIMETER = "###delimeter###"
 pinyinPattern = r"[a-zA-Z0-9⁻₂₄βüÜāáǎàēéěèīíǐìōóǒòūúǔùǖǘǚǜüĀÁǍÀĒÉĚÈĪÍǏÌŌÓǑÒŪÚǓÙǕǗǙǛÜ]+"
 termPattern = r"""
     [a-zA-Z0-9⁻₂₄β]+    # Match terms with Latin letters, numbers, subscripts, Greek letters, etc.
-    | \p{Han}         # Match Chinese characters
+    | \p{Han}            # Match Chinese characters
+    | [\u2E80-\u2EFF]    # Match CJK Radicals Supplement (including ⺮)
+    | [\u2F00-\u2FDF]    # Match Kangxi Radicals
 """
 excludePattern = r"""
-    [\p{P}\p{S}]  # Match punctuation and symbols to exclude
+    [\p{P}]  # Match punctuation and symbols to exclude
 """
 termRegex = regex.compile(termPattern, regex.VERBOSE)
 excludeRegex = regex.compile(excludePattern, regex.VERBOSE)
@@ -30,6 +32,7 @@ def verifySentencePinyin(sentence, pinyin):
 def pinyinHotfixes(pinyin):
     pinyin = re.sub(r'\bTáiwān\b', 'tái wān', pinyin)
     pinyin = re.sub(r'\bTáidōng\b', 'tái dōng', pinyin)
+    pinyin = re.sub(r'\bTáiběi\b', 'tái běi', pinyin)
     return pinyin
 
 current_term = None 
