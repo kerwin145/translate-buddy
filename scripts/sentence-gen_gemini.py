@@ -7,23 +7,68 @@ from pathlib import Path
 from tqdm import tqdm
 
 load_dotenv()
-api_key = os.getenv("API_KEY")
+api_key = os.getenv("GEMINI_KEY")
 genai.configure(api_key=api_key)
 
+generation_config = {
+  "temperature": 1,
+  "top_p": 0.95,
+  "top_k": 40,
+  "max_output_tokens": 8192,
+  "response_schema": content.Schema(
+    type = content.Type.OBJECT,
+    enum = [],
+    required = ["sentences"],
+    properties = {
+      "sentences": content.Schema(
+        type = content.Type.ARRAY,
+        items = content.Schema(
+          type = content.Type.OBJECT,
+          enum = [],
+          required = ["chinese-sentence", "sentence-pinyin", "english-translation"],
+          properties = {
+            "chinese-sentence": content.Schema(
+              type = content.Type.STRING,
+            ),
+            "sentence-pinyin": content.Schema(
+              type = content.Type.STRING,
+            ),
+            "english-translation": content.Schema(
+              type = content.Type.STRING,
+            ),
+          },
+        ),
+      ),
+    },
+  ),
+  "response_mime_type": "application/json",
+}
+
 model = genai.GenerativeModel(
-  model_name="gemini-1.5-flash",
+  model_name="gemini-2.0-flash",
   generation_config=generation_config,
-  system_instruction="You are an effective Chinese language AI instructor",
+  system_instruction="You are a helpful and insightful Chinese AI language teacher. Your responses must strictly follow the JSON format provided in the user's instructions.",
 )
 
 def getUserPrompt(term):
-    return f'''Please use the Chinese term {term} to make some sentences in Chinese with pinyin. Include the English translation as well. For the pinyin, make sure that it includes the tones (example: nǐ hǎo), and that there is space between each pinyin, in other words, it is ungrouped. It is absolutely critical that the sentence contains {term} , and the pinyin matches the sentence with no extra pinyin. If the term is uncommon, then don't return any sentences; I'd rather not have sentences than have ones with incorrect pinyin or translations. Otherwise, your sentence selection should be varied to give me a good understanding of usage and meaning.
-Output only the JSON. The following is an example output for reference. Note the formatting:
+    return f'''Use the Chinese term {term} to make some sentences in Chinese with pinyin. Include the English translation as well. 
+
+It is absolutely critical that the sentence contains {term}, and the pinyin matches the characters in the sentence. However, if the term is unknown or uncommon, don't return any sentences; I'd rather not have sentences than have ones with incorrect pinyin or translations. Otherwise, your Chinese sentence selection should be varied. Give 3 to 5 sentences, depending on how many you think is necessary/sufficient to provide a good understanding of usage and meaning. 
+
+Here's some specific rules for sentence-pinyin:
+1. For contractions with 儿,  for example: 玩儿, 个儿 etc..., treat the pinyin 儿 as it's own seperate pinyin, "r". For example: 玩儿 is wǎn r; 个儿 is gè r; 点儿 is diǎn r. 
+2. For the pinyin, make sure that it includes the tones and that each pinyin is always separated by a space. For example:  Nǐ hǎo , wǒ de péng yǒu.
+3. If there's a number, just show the number. For example, 2024
+
+Output only the JSON. The following is an example output for reference; pay close attention to the formatting, especially for the pinyin:
 {{"sentences":[
 {{"chinese-sentence": "我喜欢学中文","sentence-pinyin": "wǒ xǐ huān xué zhōng wén","english-translation": "I like learning Chinese."}},
-{{"chinese-sentence": "他在公园里跑步","sentence-pinyin": "tā zài gōng yuán lǐ pǎo bù","english-translation": "He is running in the park."}}
+{{"chinese-sentence": "他在公园里跑步","sentence-pinyin": "tā zài gōng yuán lǐ pǎo bù","english-translation": "He is running in the park."}},
+{{"chinese-sentence": "我2001年出生","sentence-pinyin": "wǒ 2001 nián chū shēng", "english-translation": "I was born in 2001."}},
+{{"chinese-sentence": "你住在哪儿？","sentence-pinyin": "nǐ zhù zài nǎ r","english-translation": "Where do you live?"}},
 ]}}
-Here's an example of no sentences:
+
+Here's an example of no sentences if {term} is unknown or uncommon:
 {{"sentences":[]}}'''
 
 
@@ -58,6 +103,6 @@ def saveSentences(response, term):
             sentences_file.write(sentence["english-translation"] + '\n')
         sentences_file.write(DELIMETER + '\n')
     
-for term in tqdm(terms[startIndex:14]):
+for term in tqdm(terms[startIndex:40]):
     response = model.generate_content(getUserPrompt(term))
     saveSentences(response.text, term)

@@ -20,7 +20,7 @@ excludePattern = r"""
 termRegex = regex.compile(termPattern, regex.VERBOSE)
 excludeRegex = regex.compile(excludePattern, regex.VERBOSE)
 
-def verifySentencePinyin(sentence, pinyin):
+def verifySentencePinyin(sentence, pinyin, term):
     matches = termRegex.findall(sentence)
     filtered_matches = [m for m in matches if not excludeRegex.fullmatch(m)]
     wordCount = len(filtered_matches)
@@ -28,11 +28,14 @@ def verifySentencePinyin(sentence, pinyin):
     pinyinCount = len(splitPiniyin)   
     if wordCount != pinyinCount:
         print(f"Issue found:\nSentence:{sentence}\nPinyin:{pinyin}\n")
+    if not all(char in sentence for char in term):
+        print(f"Issue found: Words from '{term}' not found in sentence\n{sentence}")
 
 def pinyinHotfixes(pinyin):
-    pinyin = re.sub(r'\bTáiwān\b', 'tái wān', pinyin)
-    pinyin = re.sub(r'\bTáidōng\b', 'tái dōng', pinyin)
-    pinyin = re.sub(r'\bTáiběi\b', 'tái běi', pinyin)
+    pinyin = re.sub(r'\bTáiwān\b', 'Tái Wān', pinyin)
+    pinyin = re.sub(r'\bTáidōng\b', 'Tái Dōng', pinyin)
+    pinyin = re.sub(r'\bTáiběi\b', 'Tái Běi', pinyin)
+    pinyin = re.sub(r'\bbǔ捞\b', 'bǔ lāo', pinyin)
     return pinyin
 
 current_term = None 
@@ -56,7 +59,7 @@ for line in sentenceDB_txt:
         entry["translation"] = line
         sentence, pinyin = entry["sentence"], entry["pinyin"]
         pinyin = pinyinHotfixes(pinyin)
-        verifySentencePinyin(sentence, pinyin)
+        verifySentencePinyin(sentence, pinyin, current_term)
         sentencesDB[current_term].append(entry)
         entry = {}  # Reset entry for the next sentence
 
