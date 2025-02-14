@@ -1,0 +1,115 @@
+Sentence mismatch found:
+方山县位于山西省吕梁市。
+fāng shān xiàn wèi yú shān xī shěng lǚ liáng shì de。
+Sentence mismatch found:
+为了给新产品发布会造势，他们决定先放第一炮，吸引眼球。
+wèi le gěi xīn chǎn pǐn fā bù huì zào shì, tā men jué dìng xiān fàng yī pào, xī yǐn yǎn qiú。
+Sentence mismatch found:
+每年4月25日是澳新军团日，澳大利亚和新西兰都会举行纪念活动。
+měi nián sì yuè èr shí wǔ rì shì ào xīn jūn tuán rì, ào dà lì yà hé xīn xī lán dōu huì jǔ xíng jì niàn huó dòng。
+Word absence found:
+大勇若怯，大智若愚
+他虽然看起来谨慎低调，但在关键时刻展现出了非凡的勇气，真是大勇若怯。
+Word absence found:
+大勇若怯，大智若愚
+这位老人平时话不多，甚至有些迟钝，但在复杂问题上总能一语道破，真正是大智若愚。
+Sentence mismatch found:
+通过注射玻尿酸，可以有效减轻鼻唇沟的深度。
+tōng guò zhù shè bō li áo suān, kě yǐ yǒu xiào jiǎn qīng bí chún gōu de shēn dù。
+Sentence mismatch found:
+台湾的铨叙部负责公务人员的任用和考核。
+tái wān de quán xù bù fù zé gōng wù rényuán de rèn yòng hé kǎo hé。
+Sentence mismatch found:
+导演运用慢速摄影，突出了舞蹈演员动作的优美和力量。
+dǎo yǎn yùn yòng màn sù shè yǐng, tū chū le wǔ dǎo yǎn dòng zuò de yōu měi hé lì liàng。
+Sentence mismatch found:
+他因违反公司规定而被解职。
+tā yīn wéi fǎn guī gōng sī guī dìng ér bèi jiě zhí。
+Sentence mismatch found:
+他小时候很聪明，被称为神童，但现在看来，真是“小时了了，大未必佳”。
+tā xiǎo shí hěn cōng míng, bèi chēng wéi shén tóng, dàn xiàn zài kàn lái, zhēn shì “xiǎo shí liǎo liǎo, dà wèi bì jiā”。
+Sentence mismatch found:
+虽然他小时候成绩很好，但长大后却一事无成，真是应了那句“小时了了，大未必佳”。
+suī rán tā xiǎo shí chéng jì hěn hǎo, dàn zhǎng dà hòu què yī shì wú chéng, zhēn shì yìng le nà jù “xiǎo shí liǎo liǎo, dà wèi bì jiā”。
+Sentence mismatch found:
+他万万没有想到，变生肘腋，最信任的助手竟然背叛了他。
+tā wàn wàn méi yǒu xiǎng dào, biàn shēng zhǒu yè, zuì xìn rèn de zhù shǒu jìng rán bèi pàn le。
+Sentence mismatch found:
+一方面，我喜欢在家工作，因为很自由；另一方面，我也想念和同事们一起工作。
+yī fāng miàn, wǒ xǐ huan zài jiā gōng zuò, yīn wèi hěn zì yóu; yī fāng miàn, wǒ yě xiǎng niàn hé tóng shì men yī qǐ gōng zuò。
+Sentence mismatch found:
+一方面，学习新技能很重要；另一方面，也要巩固已有的知识。
+yī fāng miàn, xué xí xīn jì néng hěn zhòng yào; yī fāng miàn, yě yào gǒng gù yǐ yǒu de zhī shi。
+Sentence mismatch found:
+一方面，我们需要发展经济；另一方面，也要保护环境。
+yī fāng miàn, wǒ men xū yào fā zhǎn jīng jì; yī fāng miàn, yě yào bǎo hù huán jìng。
+Sentence mismatch found:
+一方面，他很想去旅行；另一方面，他又担心工作。
+yī fāng miàn, tā hěn xiǎng qù lǚ xíng; yī fāng miàn, tā yòu dān xīn gōng zuò。
+Sentence mismatch found:
+一方面，运动有益健康；另一方面，也要注意适度，避免受伤。
+yī fāng miàn, yùn dòng yǒu yì jiàn kāng; yī fāng miàn, yě yào zhù yì shì dù, bì miǎn shòu shāng。
+Sentence mismatch found:
+狄拉克方程描述了自旋1/2粒子的行为。
+dí lā kè fāng chéng miáo shù le zì xuán èr fēn zhī yī lì zǐ de xíng wéi。
+Sentence mismatch found:
+物理学家们经常提到狄拉克δ函数。
+wù lǐ xué jiā men jīng cháng tí dào dí lā kè dé ěr tǎ hán shù。
+Sentence mismatch found:
+他的眼神中流露出深深的思念。
+tā de yǎn shén zhōng liú lù shēn shēn de sī niàn。
+Sentence mismatch found:
+为了更好地发展旅游业，美溪区政府正在加大基础设施建设力度。
+wèi le gèng hǎo dì fā zhǎn lǚ yóu yè, měi xī qū zhèng zài jiā dà jī chǔ shè shī jiàn shè lì dù。
+Sentence mismatch found:
+过氧化苯甲酰常用于治疗痤疮。
+guò yǎng huà běn jiǎ xiān ān cháng yòng yú zhì liáo cuó chuāng。
+Sentence mismatch found:
+他因违反交通规则，驾照被交警部门缴销了。
+tā yīn wéi fǎn le jiāo tōng guī zé, jià zhào bèi jiāo jǐng bù mén jiǎo xiāo le。
+Sentence mismatch found:
+哈萨克族主要居住在新疆伊犁哈萨克自治州。
+hā sà kè zú zhǔ yào jū zhù zài xīn jiāng yī lí hā sà kè zú zì zhì zhōu。
+Sentence mismatch found:
+虽然早出晚归很累，但他觉得为了梦想奋斗是值得的。
+suī rán zǎo chū wǎn guī hěn lèi, dàn tā jué de wèi le mèng xiǎng fèn dòu shì zhí de。
+Sentence mismatch found:
+这次改革的代价很高，但长期来看是值得的。
+zhè cì gǎi gé de dài jià hěn gāo, dàn cháng qī lái kàn shì zhí de。
+Sentence mismatch found:
+为了发展经济，宕昌县政府正在积极招商引资。
+wèi le fā zhǎn jīng jì, dàng chāng xiàn zhèng zài jī jí zhāo shāng yǐn zī。
+Sentence mismatch found:
+他一头栽进了柔软的沙发里，舒服地叹了口气。
+tā yī tóu zāi jìn le róu ruǎn de shā fā lǐ, shū fú dì tàn le yī kǒu qì。
+Sentence mismatch found:
+他因为低血糖昏过去了。
+tā yīn wèi dī xuè táng hūn guo qù。
+Sentence mismatch found:
+在薄暗的光线下，我看不清他的脸。
+zài bó àn de guāng xià, wǒ kàn bù qīng tā de liǎn。
+Sentence mismatch found:
+别被“珍珠翡翠白玉汤”这个名字迷惑了，它其实是很简单的家常菜。
+bié bèi “zhēn zhū fěi cuì bái yù tāng” zhè gè mí huò le, tā qí shí shì hěn jiǎn dān de jiā cháng cài。
+Sentence mismatch found:
+这家皮草店出售各种款式的的水貂大衣。
+zhè jiā pí cǎo diàn chū shòu gè zhǒng kuǎn shì de shuǐ diāo dà yī。
+Sentence mismatch found:
+他转头对我说：“这件事就这么定了。”
+tā zhuǎn tóu duì wǒ shuō: “zhè jiàn shì jiù zhème dìng le。”
+Sentence mismatch found:
+我们可以将十进制数转换为二进数。
+wǒ men kě yǐ jiāng shí jìn zhì shù zhuǎn huàn wéi èr jìn zhì shù。
+Sentence mismatch found:
+我计划去荥阳参观古 battlefield。
+wǒ jì huà qù xíng yáng cān guān gǔ zhàn chǎng。
+Sentence mismatch found:
+肇源县位于黑龙江省大庆市。
+zhào yuán xiàn wèi yú hēi lóng jiāng shěng dà qìng shì de。
+Sentence mismatch found:
+我开车送你去机场。
+wǒ kāi chē sòng qù nǐ qù jī chǎng。
+Sentence mismatch found:
+他因违反签证规定而被遣送出境。
+tā yīn wéi fǎn le qiān zhèng guī dìng ér bèi qiǎn sòng chū jìng。
+Conversion to JSON complete

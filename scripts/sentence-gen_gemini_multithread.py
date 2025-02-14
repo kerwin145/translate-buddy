@@ -11,7 +11,41 @@ import signal
 with open("../cedict.json", "r", encoding="utf-8") as file:
     dictionary_data = json.load(file)
 
-SYSTEM_PROMPT = "你是一位知识渊博、理解力强、教学高效的中文教师。如果指定的词汇非常生僻，请不返回任何句子。此外，每个拼音（即使是专有名词）都必须单独分开，各音节之间以空格隔开。"
+SYSTEM_PROMPT = ('''
+你是一位知识渊博、理解力强、教学高效的中文教师。请严格按照以下要求作答：
+
+【输出格式】
+1. 只输出 JSON 格式，不要包含任何额外说明或注释。JSON 必须为一个对象，包含键 "sentences"，其值为一个句子数组。
+   例如：
+   {
+     "sentences": [
+       {"chinese-sentence": "我应该学好中文。", "sentence-pinyin": "wǒ yīng gāi xué hǎo zhōng wén。", "english-translation": "I should learn Chinese well."},
+       {"chinese-sentence": "每天早晨，他一步一步地向山上走去。", "sentence-pinyin": "měi tiān zǎo chén, tā yī bù yī bù dì xiàng shān shàng zǒu qù。", "english-translation": "Every morning, he walked up the mountain step by step."},
+       {"chinese-sentence": "我2001年出生，在一个充满活力的城市里长大。", "sentence-pinyin": "wǒ 2001 nián chū shēng, zài yī gè chōng mǎn huó lì de chéng shì lǐ zhǎng dà。", "english-translation": "I was born in 2001, and I grew up in a vibrant city."},
+       {"chinese-sentence": "马村区是河南省焦作市的一个市辖区。", "sentence-pinyin": "mǎ cūn qū shì hé nán shěng jiāo zuò shì de yī gè shì xiá qū。", "english-translation": "Macun District is a district under the jurisdiction of Jiaozuo City, Henan Province."}
+     ]
+   }
+
+【句子要求】
+2. 每个生成的中文句子必须包含指定的词汇。
+3. 如果指定的词汇非常生僻、未知，或是古代不常用的字词，则输出空的句子列表，即 {"sentences": []}。
+4. 针对 "{term}" 的句子应具有多样性。请根据需要提供 3 到 5 个句子，以充分传达用法和含义。
+
+【拼音要求】
+5. 为每个中文句子提供一个完全对应的拼音版本，要求：
+    - 每个拼音音节之间必须用单个空格隔开；
+    - 拼音中必须包含声调；
+    - 汉字与拼音一一对应；
+    - 如果句子中包含数字或英文字母，则保持其原样。
+    - 对于带儿化音的词，例如“玩儿”或“个儿”，拼音中的“儿”应作为独立的音节（写作 r）。例如：
+        - 中文句子："他在公园里玩儿得特别高兴，还买了点儿吃的。"
+        - 对应拼音："tā zài gōng yuán lǐ wán r de tè bié gāo xìng, hái mǎi le diǎn r chī de。"
+【参考信息中的多音】
+6. 如果参考信息中提供了多种拼音读音，请使用斜杠（/）分隔，例如 "nǐ hǎo / ní hǎo"。这种表示方式是可以接受的，但在生成的句子中，每个汉字只应对应一种正确的发音。
+
+请严格按照以上要求生成输出。
+'''
+    )
     
 indexed_dictionary = {}
 for obj in dictionary_data:
@@ -43,37 +77,14 @@ def load_terms_and_index(sentences_path, terms_path, delimiter):
 
 def getUserPrompt(term):
     item = indexed_dictionary[term]
+    # For display purposes, join any provided pinyin variants with a separator
     pinyin = " / ".join([entry['pinyin'] for entry in item])
     definition = ""
-    if len(item) == 1 and len(item[0]['definitions']) == 1:
-        definition = "词语定义是 " + item[0]['definitions'][0]
+    if len(item) == 1:
+        definition = f" 词语定义：{" / ".join(item[0]['definitions'][0:3])}"
 
-    return f'''使用中文词汇 "{term}" 来造一些中文句子。请在不同的字段中分别提供句子的拼音和英文翻译。
-参考信息：它的拼音是 {pinyin}。{definition if definition != "" else ""}
-
-只输出 JSON。以下是一个参考输出示例；请特别注意格式，尤其是拼音部分。请确保每个拼音音节之间都用空格隔开。
-{{"sentences":[
-{{"chinese-sentence": "我应该学好中文。","sentence-pinyin": "wǒ yīng gāi xué hǎo zhōngwén。","english-translation": "I should learn Chinese well."}},
-{{"chinese-sentence": "每天早晨，他一步一步地向山上走去。","sentence-pinyin": "Měi tiān zǎo chén, tā yī bù yī bù dì xiàng shān shàng zǒu qù。","english-translation": "Every morning, he walked up the mountain step by step."}},
-{{"chinese-sentence": "我2001年出生，在一个充满活力的城市里长大。","sentence-pinyin": "wǒ 2001 nián chū shēng，zài yī gè chōng mǎn huó lì de chéng shì lǐ zhǎng dà。","english-translation": "I was born in 2001, and I grew up in a vibrant city."}},
-{{"chinese-sentence": "有点饿了，去吃点东西吧。","sentence-pinyin": "yǒu diǎn è le，qù chī diǎn dōng xī ba。","english-translation": "I'm a little hungry, let's go eat something."}},
-{{"chinese-sentence": "马村区是河南省焦作市的一个市辖区。", "sentence-pinyin": "Mǎ cūn qū shì Hé Nán shěng Jiāo Zuò shì de yī gè shì xiá qū。", "english-translation": "Macun District is a district under the jurisdiction of Jiaozuo City, Henan Province."}}
-]}}
-
-如果 "{term}" 不常用或未知，以下是没有句子的示例：
-{{"sentences":[]}}
-
-以下是关于中文句子的一些重要规则：
-1. 句子中必须包含 "{term}"，并且拼音必须与句子中的汉字完全匹配。
-2. 如果 "{term}" 不常用或未知，不要返回任何句子；我宁愿没有句子，也不要返回拼音或翻译不正确的句子。
-3. 针对 "{term}" 的句子应具有多样性。请根据需要提供 3 到 5 个句子，以充分传达用法和含义。
-
-关于句子拼音的一些重要规则：
-1. 不要在原始中文句子中添加不存在的拼音。
-2. 对于带儿化音的词，例如：玩儿、个儿等，拼音中的“儿”应作为单独的部分，用空格隔开，即 "r"。例如：玩儿 应写作 wǎn r。
-3. 确保拼音包含声调，并且每个拼音之间始终用空格分隔。例如：Nǐ hǎo , wǒ de péng yǒu.
-4. 如果出现数字，则直接显示数字。例如：2024。
-5. 对于包含英文字母的缩写（如 ABCDE），请保持字母连在一起。'''
+    return f'''使用中文词汇 "{term}" 造句。参考信息："{term}" 的拼音: {pinyin}.{definition}
+请严格按照系统提示要求输出 JSON，并确保句子正确地使用 "{term}"'''
 
 def worker(task, api_key, lock):
     original_index, term = task
@@ -170,7 +181,7 @@ if __name__ == '__main__':
     print(f"Starting at term {start_index}, {terms[start_index]}")
 
     # Tasks
-    terms_to_process = terms[start_index:3000]
+    terms_to_process = terms[start_index:36000]
     tasks = [(start_index + i, term) for i, term in enumerate(terms_to_process)]
 
     # Multiprocessing setup
