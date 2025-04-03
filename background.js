@@ -16,12 +16,54 @@ chrome.storage.local.get(null).then((localData) => {
 */
 
 //initializing this here to show structure. Who needs object oriented programming?
-tr_data = {text: "", HSK_levels: null, page: null, entries: [], compounds: [], subCompounds: [], strokeImgUrl: "", useImgCache: false, sentenceData: null, sentenceQuery: null, history: {}}
+tr_data = {text: "", HSK_levels: null, page: null, entries: [], compounds: [], subCompounds: [], strokeImgUrl: "", useImgCache: false, sentenceData: null, history: {}}
 const invertedIndex = new Map()
 let dictionaryData = null;
 let dictionaryDataIndexed = new Map() //allows O(1) retrieval where the key is the simplified word. The value is a list of entries with that key (as a single word can have multiple entries)
 let translationProcessingKilled = false
 chrome.storage.session.setAccessLevel({ accessLevel: 'TRUSTED_AND_UNTRUSTED_CONTEXTS' });
+// sentence partitions; will cache 5 partitions max. {partition_idx : {Sentence dict, priority})
+class SentenceDB {
+  constructor(maxSize = 5) {
+      this.maxSize = maxSize;
+      this.cache = new Map();
+  }
+
+  // Get sentence and update LRU order if partition exists. Else, remove LRU and add new partition
+  async #queryPartition(partition_idx){
+      const sentenceDict = this.cache.get(partition_idx);
+      if(sentenceDict){
+          console.log(`Partition ${partition_idx} already loaded in cache: ${Array.from(this.cache.keys())}`)
+          this.cache.delete(partition_idx);
+          this.cache.set(partition_idx, sentenceDict);
+          return sentenceDict
+      }
+
+      // partition idx doesn't exist and we are full cache. we shall push out LRU
+      if (this.cache.size >= this.maxSize) {
+        const firstKey = this.cache.keys().next().value;
+        console.log(`LRU cache full. Pushing out ${firstKey}`)
+          this.cache.delete(firstKey);
+      }
+
+      try{
+        console.log(`Loading in partition ${partition_idx}`)
+        const res = await fetch(chrome.runtime.getURL(`partitions/${partition_idx}.json`))
+        const newSentenceDict = await res.json();
+        this.cache.set(partition_idx, newSentenceDict);
+        return newSentenceDict
+      }catch(e){console.log(e)}
+
+      return null
+
+  }
+
+  async getExampleSentence(term, partition_idx){
+      const partition = await this.#queryPartition(partition_idx)
+      return partition[term]
+  }
+}
+const sentenceDB = new SentenceDB()
 
 // Add right click menu
 chrome.runtime.onInstalled.addListener(() => {
@@ -45,9 +87,7 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
   else if(action === "sort-wordbank"){
     sortForWordBank()
   }
-  else if(action === "setCache"){
-    updateCache(data.key, data.value)
-  }else if(action === "kill-translation"){
+  else if(action === "kill-translation"){
     console.log("Request to kill translation recieved")
     translationProcessingKilled = true
   } else if (action === "saveSync"){
@@ -72,7 +112,7 @@ performVersionCheck()
 async function performVersionCheck() {
   try {
       const currentVersionData = {
-          Word_Bank: 1,
+          Word_Bank: 2,
       };
 
       const storedVersionData = await new Promise((resolve, reject) => {
@@ -88,8 +128,6 @@ async function performVersionCheck() {
       if(!storedVersionData || !storedVersionData.Word_Bank || storedVersionData.Word_Bank < 1){
         console.log("Updating version")
         //clear cache
-        console.log("Clearing cache")
-        await chrome.storage.local.set({cache: {}})
         const {wordbank} = await chrome.storage.local.get('wordbank')
         if(wordbank){
           console.log("Syncing deprecated local word bank to cloud")
@@ -98,12 +136,17 @@ async function performVersionCheck() {
             await saveSyncWordbank(key, value)
           }
         }
-       
       }
+
+      if(!storedVersionData || !storedVersionData.Word_Bank || storedVersionData.Word_Bank < 2){
+        console.log("Clearing cache")
+        await chrome.storage.local.set({cache: {}})
+      }
+
       await new Promise((resolve, reject) => {
         const updatedVersionData = {
           ...storedVersionData,
-          Word_Bank: 1
+          Word_Bank: currentVersionData["Word_Bank"]
         };
         chrome.storage.sync.set({ "versionData": updatedVersionData }, () => {
           if (chrome.runtime.lastError) {
@@ -138,8 +181,7 @@ async function processTranslation(text, updateHistoryAction = "NEW"){
   await loadDictionaryData(text)
 
   text = text.replace(/\s/g, "")
-  const sentenceQuery = `https://www.purpleculture.net/sample_sentences/?word=${text}`
-  tr_data = {text: "", HSK_levels: null, page: null, entries: [], compounds: [], subCompounds: [], strokeImgUrl: "", sentenceData: null, sentenceQuery, history: null}
+  tr_data = {text: "", HSK_levels: null, page: null, entries: [], compounds: [], subCompounds: [], strokeImgUrl: "", sentenceData: null, history: null}
   let targetEntries = searchWordAndProcessHSK(text)
   tr_data.text = text;
   tr_data.page = 0;
@@ -165,16 +207,15 @@ async function processTranslation(text, updateHistoryAction = "NEW"){
 
   try{
     //get sentences
-    let data = await queryCache(text)
-    if(data){
-      console.log("Hit sentence cache :o")
-      await chrome.storage.session.set({data: { action: "loadSentences", data, isCached: true }})
-    }else{
-      console.log("Missed sentence cache :(")
-      let sentenceData = await fetch(sentenceQuery)
-      let html = await sentenceData.text()
-      await chrome.storage.session.set({data: { action: "loadSentences", data: html, isCached: false}})
+    simplified_text = tr_data.entries[0]["simplified"]
+    let data = await queryCache(simplified_text)
+    if(data){ console.log("Hit generic sentence cache :o")}
+    else{
+      console.log("Missed generic cache :(")
+      data = await processSentencedbRequest(simplified_text)
+      updateCache(simplified_text, data)
     }
+    chrome.storage.session.set({data: { action: "loadSentences", data}})
   } catch (e) {console.log(e)}
 }
 
@@ -182,10 +223,9 @@ async function processTranslationBasic(text){
   await loadDictionaryData(text, basic = true)
 
   text = text.replace(/\s/g, "")
-  const sentenceQuery = `https://www.purpleculture.net/sample_sentences/?word=${text}`
   let targetEntries = searchWordAndProcessHSK(text)
 
-  tr_data = {text: "", HSK_levels: null, page: null, entries: [], compounds: [], subCompounds: [], strokeImgUrl: "", sentenceData: null, sentenceQuery, history: null}
+  tr_data = {text: "", HSK_levels: null, page: null, entries: [], compounds: [], subCompounds: [], strokeImgUrl: "", sentenceData: null, history: null}
   tr_data.text = text;
   tr_data.page = 0;
   tr_data.entries = sortEntries(targetEntries, true)
@@ -223,6 +263,17 @@ async function updateHistory(text, updateHistoryAction){
   chrome.storage.sync.set({ history: {entries, idx}})
 
   return {pref, suff}
+}
+
+async function processSentencedbRequest(term){
+  const partitionPercentiles = [0.0, 1000.0, 2460.0, 3754.0, 4935.5, 6070.0, 7210.5, 8364.28125, 9593.0, 10950.0, 12523.5, 14283.5, 16476.5, 19241.0, 23184.0625, 30196.6875, 290200.0]
+  const entry = dictionaryDataIndexed.get(term)[0]
+  const score = (entry["word_score_ex"] + entry["word_score_in"])/2
+  partition_idx = 0
+  while (partition_idx < 15 &&  score > partitionPercentiles[partition_idx + 1])
+    partition_idx += 1
+  const sentences = await sentenceDB.getExampleSentence(term, partition_idx)
+  return sentences
 }
 
   //inverted index keeps track of phrases starting with a pair of words
@@ -275,7 +326,6 @@ function searchWordAndProcessHSK(text){
   tr_data.HSK_levels = levels.join(", ")
   return entries
 }
-
  
 async function sortForWordBank(sortMode = "default"){
   await loadDictionaryData(null, basic = true)
@@ -449,3 +499,4 @@ async function queryCache(key) {
   }
   return null
 }
+

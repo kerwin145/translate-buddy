@@ -4,7 +4,7 @@
 }
 
 #translation-panel div, #translation-panel p{
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: 'Microsoft YaHei', 'Arial', 'sans-serif';
 }
 
 #translation-panel p{
@@ -94,7 +94,7 @@
   width: min-content;
   max-width: max(30vw, min(300px, 100vw));
   outline:none;
-  font-family: Arial, sans-serif;
+  font-family: 'Microsoft YaHei', 'Arial', 'sans-serif';
   font-size: 16px;
 }
 
@@ -266,6 +266,7 @@
   display: flex;
   flex-direction: column;
   max-height: 78vh;
+  line-height: 1.5;
 }
 
 .translate-compounds-container{
@@ -540,13 +541,15 @@ opacity: 85%;
   line-height: 1.25;
   display: flex;
   gap: 3px;
-  padding-right: 2px;
+  padding-right: 4px;
+  padding-bottom: 0.25rem;
   flex-wrap: wrap;
 }
 
 .translate-sentences .sentences-english-tr{
   font-size: 1em;
   font-style: italic;
+  font-family: Arial, sans-serif;
   margin-bottom: 2px;
 }
 
@@ -560,17 +563,9 @@ opacity: 85%;
   color: indigo;
 }
 
-.translate-sentences .sentences-attribution{
-  margin-top: 4px;
-  font-size: .7em;
-  color: silver;
-  line-height: 1.15;
-}
-
-
 .sentences-control{
   line-height: 1.15;
-  margin-top: 6px;
+  padding-top: 0.5rem;
   display: flex;
   justify-content: space-between;
 }
@@ -674,7 +669,6 @@ opacity: 85%;
 #translation-panel.translation-panel-expand h3{
   padding-bottom: 4px;
 }
-
 
 #translation-panel.translation-panel-expand .translate-comp{
   margin: 2px 0;

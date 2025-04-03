@@ -21,7 +21,7 @@ function processEventQueue(){
     // console.log(document.visibilityState)
     let event = sesssionEventQueue.shift()
 
-    if(document.visibilityState.toLowerCase() !== "visible")
+    if(document.visibilityState.toLowerCase() !== "visible"|| !document.hasFocus())
       continue
 
     let {action, data} = event
@@ -36,15 +36,7 @@ function processEventQueue(){
         showTranslationPanel()
         break
       case "loadSentences":
-        if(event.isCached){
-          tr_data.sentenceData = processSentenceData(data)
-        }else{
-          let $html = $(data);
-          const table = $html.find('.table').text();
-          tr_data.sentenceData = processSentenceData(table)
-          chrome.runtime.sendMessage({action: "setCache", data: {key: tr_data.text, value: table}}) //we store table rather than the processed data b/c table is smaller, and processing won't take too long
-        }
-        processSentences(tr_data.sentenceData, tr_data.sentenceQuery)
+          displaySentences(data)
         break
       case "showLoadingPanelBasic":
         let $targetElementLoading = $("#wordbank-content")
@@ -281,8 +273,6 @@ async function showWordbankPanel(){
     bank_words = Object.keys(res.wordbank)
   }
 
-  console.log("DEBUG WORDBANK")
-  console.log(res.wordbank)
   chrome.runtime.sendMessage({action: "sort-wordbank"})
 
   let preHtml = 
@@ -520,21 +510,21 @@ function makeNavChip(parent){
   if(tr_data.page == 0)
     leftArrow.classList.add('tr-nav-disabled')
   if(tr_data.page < tr_data.entries.length - 1)
-    rightArrow.addEventListener('click', () => {tr_data.page++; showTranslationPanel(); processSentences(tr_data.sentenceData, tr_data.sentenceQuery)})
+    rightArrow.addEventListener('click', () => {tr_data.page++; showTranslationPanel(); displaySentences(tr_data.sentenceData)})
   if(tr_data.page == tr_data.entries.length - 1)
     rightArrow.classList.add('tr-nav-disabled')
   if(tr_data.page > 0)
-    leftArrow.addEventListener('click', () => {tr_data.page--; showTranslationPanel(); processSentences(tr_data.sentenceData, tr_data.sentenceQuery)})
+    leftArrow.addEventListener('click', () => {tr_data.page--; showTranslationPanel(); displaySentences(tr_data.sentenceData)})
 
   translationPanel.addEventListener('keydown', (e) => {
     if (e.code === "ArrowRight" && tr_data.page < tr_data.entries.length - 1) {
         tr_data.page++;
         showTranslationPanel();
-        processSentences(tr_data.sentenceData, tr_data.sentenceQuery)
+        displaySentences(tr_data.sentenceData)
     } else if (e.code === "ArrowLeft" && tr_data.page > 0) {
         tr_data.page--;
         showTranslationPanel();
-        processSentences(tr_data.sentenceData, tr_data.sentenceQuery)
+        displaySentences(tr_data.sentenceData)
     }
   });
 
@@ -594,132 +584,73 @@ function makeCompoundListHTML(parent, compounds, blockTitle, blockNoResultsText,
   }
 }
 
-// MACRO where?
+// C MACRO where?
 function isChineseChar(c){
   return c.codePointAt(0) >= 0x4E00 && c.codePointAt(0) <= 0x9FFF
 }
 
-function processSentenceData(str){
-  let processed = str.split(/\d+\s{2,}/).filter(x => x.length > 1)
-  .map(el => {let spl = el.split(/\n+/); return {rawChinese: spl[0].trim().replace(/\s([\p{P}\p{S}])/gu, '$1'), english:spl[1]}})
-  .filter(x => x.rawChinese.length > 0)
-
-  return processed.map(el => {
-    const cur = el.rawChinese
-    let reversedList = []
-    let otherBuffer = []
-    let mode = 0 //0 means processing non chinese chars. 1 means chinese char spotted, and keep on finding chinese chars. 2 means chinese char group finished, and now we associate it with pinyin
-    let wordBuffer = []
-    let pinyinBuffer = []
-    for(let i = cur.length-1; i >= 0; i--){
-      let c = cur[i]
-      switch(mode){
-        case 0:
-          if(!isChineseChar(c)){ otherBuffer.push(c) }
-          else{ 
-            mode = 1
-            wordBuffer = [c]
-            if(otherBuffer.length > 0){
-              otherBuffer = otherBuffer.reverse()
-              reversedList.push({pinyin: "" , word: otherBuffer.join('')})
-              otherBuffer = []
-            }
-          }
-          break
-        case 1:
-          if(isChineseChar(c)){ wordBuffer.push(c) }
-          else{ //time to gather pin yin
-            wordBuffer = wordBuffer.reverse()
-            pinyinBuffer.push(c)
-            mode = 2
-          }
-          break
-        case 2:
-          if(c !== ' '){ pinyinBuffer.push(c) }
-          else{
-            pinyinBuffer = pinyinBuffer.reverse()
-            reversedList.push({pinyin: pinyinBuffer.join(''), word: wordBuffer.pop()})
-            pinyinBuffer = []
-            if(wordBuffer.length === 0){
-              mode = 0
-            }
-          }
-          break
-      }
-    }
-    //flush
-    if(otherBuffer.length > 0){
-      otherBuffer = otherBuffer.reverse()
-      reversedList.push({pinyin: "" , word: otherBuffer.join('')})
-    }
-    if(pinyinBuffer.length > 0 && wordBuffer.length > 0){
-      pinyinBuffer = pinyinBuffer.reverse()
-      reversedList.push({pinyin: pinyinBuffer.join(''), word: wordBuffer.pop()})
-    }
-
-    return {words: reversedList.reverse(), english: el.english}
-  })
-}
-async function processSentences(data, queryUrl){
-  const DOMsentences = await  waitForElement('.translate-sentences')
+const pinyinPattern = new RegExp(
+  "[a-zA-Z0-9⁻₂₄〢πμńm̀…βδüÜāáǎàēéěèīíǐìōóǒòūúǔùǖǘǚǜüĀÁǍÀĒÉĚÈĪÍǏÌŌÓǑÒŪÚǓÙǕǗǙǛÜ乚_]+",
+  "gu"
+);
+const termPattern = new RegExp(
+  "[a-zA-Z0-9⁻₂₄〢πμńm̀…βδüÜāáǎàēéěèīíǐìōóǒòūúǔùǖǘǚǜüĀÁǍÀĒÉĚÈĪÍǏÌŌÓǑÒŪÚǓÙǕǗǙǛÜ]+" +  // Match Pinyin and Latin-based words
+  "|\\p{Script=Han}" +     // Match Chinese characters
+  "|[\\u2E80-\\u2EFF]" +   // Match CJK Radicals Supplement
+  "|[\\u2F00-\\u2FDF]",    // Match Kangxi Radicals
+  "gu"
+);
+const termPatternSingle = new RegExp(
+  "[a-zA-Z0-9⁻₂₄〢πμńm̀…βδüÜāáǎàēéěèīíǐìōóǒòūúǔùǖǘǚǜüĀÁǍÀĒÉĚÈĪÍǏÌŌÓǑÒŪÚǓÙǕǗǙǛÜ]+" +  // Match Pinyin and Latin-based words
+  "|\\p{Script=Han}|[\\u2E80-\\u2EFF]|[\\u2F00-\\u2FDF]",    
+  "u"
+);
+async function displaySentences(data){
+  const DOMsentences = await waitForElement('.translate-sentences')
 
   DOMsentences.innerHTML = ""
-
-  const $attribution = $('<div></div>').addClass('sentences-attribution')
-  const textBeforeLink = 'Sentences provided by ';
-  const $link = $('<a></a>').attr('href', 'https://www.purpleculture.net').text('Purple Culture');
-  $attribution.append(textBeforeLink).append($link);
 
   if(data.length == 0){
     const $noResults = $('<p></p>').addClass('sentences-no-results').text(`Wow, that's rare. No sentences have been found for ${tr_data.text}. Maybe try again?`)
     $(DOMsentences).append($noResults)
-    $(DOMsentences).append($attribution)
     return
-  }
-  
-  if(data.length > 4){
-    let front = data.slice(0,2)
-    let end = data.slice(2)
-    //SHUFFLE IT!
-    for(let i = 0; i < end.length/2; i++){
-      let newIdx = Math.floor(Math.random() * end.length)
-      let temp = end[newIdx]
-      end[newIdx] = end[i]
-      end[i] = temp
-    }
-    data = front.concat(end.slice(0,2))
   }
 
   const $sentencesBlockContainer = $('<div></div>').addClass('sentences-body')
+  for (const item of data){
+    const rawTerms = item["sentence"].split('')
+    const splitPinyin = item["pinyin"].match(pinyinPattern)
+    const splitTerms = item["sentence"].match(termPattern)
 
-  for(const p of data){
     //jquery hell yeah  
     const $sentenceBlock = $('<div></div>').addClass('sentences-block')
     const $wordsAndPinyin = $('<div></div>').addClass('sentences-line')
-    for(let i = 0; i < p.words.length; i++){
-      let entry = p.words[i]
-
+    let term_idx = 0
+    rawTerms.forEach((term, idx) => {
       const $single = $('<span></span').addClass('sentences-single')
-
       const $top = $('<div></div>').addClass('sentences-pinyin')
-      if(entry.pinyin.length === 0){
+      const $bottom = $('<div></div>').addClass('sentences-words')
+
+      if (!termPatternSingle.test(term)){
         $top.append($('<wbr>'));
+        $bottom.text(term)
+      }else{
+        $top.text(splitPinyin[term_idx])
+        $bottom.text(splitTerms[term_idx])
+        term_idx += 1
       }
-      else
-        $top.text(entry.pinyin)
-
-      const $bottom = $('<div></div>').addClass('sentences-words').text(entry.word)
-      if(i === p.words.length-1 && entry.word.length === 1 && /[\p{P}\p{S}]/u.test(entry.word))
-        $bottom.addClass('zero-width') //if last char is puncutation, make it zero width to stop wrapping behavior
-
+      
       if(sentencesOnlyWords) 
         $top.addClass('tr-hide');
 
+      if(idx === rawTerms.length-1 && /[\p{P}\p{S}]/u.test(term))
+        $single.addClass('zero-width') //if last char is puncutation, make it zero width to stop wrapping behavior
+
       $single.append($top).append($bottom)
       $wordsAndPinyin.append($single)
-    }
+    })
 
-    const $english = $('<div></div>').addClass('sentences-english-tr').text("⟶ " + p.english)
+    const $english = $('<div></div>').addClass('sentences-english-tr').text("⟶ " + item["translation"])
     if(sentencesOnlyWords) 
       $english.addClass('tr-hide');
 
@@ -728,12 +659,8 @@ async function processSentences(data, queryUrl){
 
     $sentencesBlockContainer.append($sentenceBlock)
   }
-  
-  const $sentences_control = $('<div></div>').addClass('sentences-control')
-  const $moreLink = $('<a></a>').addClass('sentences-more')
-  $moreLink.attr('href', queryUrl).attr('target', '_blank')
-  $moreLink.text("More!")
-  
+   
+  const $sentences_control = $('<div></div>').addClass('sentences-control')  
   const $toggleContainer = $('<div></div>')
   const $toggleOnlyWords = $('<input>').attr({
     type: 'checkbox',
@@ -760,14 +687,12 @@ async function processSentences(data, queryUrl){
   $toggleContainer.append($label)
   $toggleContainer.append($toggleOnlyWords)
 
-  $sentences_control.append($moreLink)
   $sentences_control.append($toggleContainer)
   
   const $sentenceFooter = $('<div></div>').attr({class: 'sentences-footer'})
 
   $(DOMsentences).append($sentencesBlockContainer)
   $($sentenceFooter).append($sentences_control)
-  $($sentenceFooter).append($attribution)
   $(DOMsentences).append($sentenceFooter)
 }
 

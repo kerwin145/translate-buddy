@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Translate Buddy",
-  "version": "2.0.9",
+  "version": "2.1.0",
   "description": "Translate with context.",
   "permissions": [
     "storage", 
@@ -34,7 +34,7 @@
   ],
   "web_accessible_resources": [
     {
-      "resources": ["styles.css", "cedict.json", "images/bank_add.png", "images/bank_delete.png", "images/bank_show.png"],
+      "resources": ["styles.css", "cedict.json", "images/bank_add.png", "images/bank_delete.png", "images/bank_show.png", "partitions/*.json"],
       "matches": ["<all_urls>"]
     }
   ]
