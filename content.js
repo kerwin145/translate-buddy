@@ -36,7 +36,8 @@ function processEventQueue(){
         showTranslationPanel()
         break
       case "loadSentences":
-          displaySentences(data)
+          tr_data.sentenceData = data
+          displaySentences(tr_data.sentenceData)
         break
       case "showLoadingPanelBasic":
         let $targetElementLoading = $("#wordbank-content")

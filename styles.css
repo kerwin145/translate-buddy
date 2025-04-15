@@ -265,14 +265,14 @@
   overflow: auto;
   display: flex;
   flex-direction: column;
-  max-height: 78vh;
+  max-height: 80vh;
   line-height: 1.5;
 }
 
 .translate-compounds-container{
   gap: 1rem;
   margin-bottom: 8px;
-  max-height: 40vh;
+  max-height: 30vh;
 }
 
 .translate-results > *, .translate-compounds-container > *{
@@ -639,7 +639,7 @@ opacity: 85%;
 .translation-panel-expand .translation-explore, 
 .translation-panel-expand-2 .translation-explore{
   grid-area: explore;
-  max-height: 33vh;;
+  max-height: none;;
 }
 
 .translation-panel-expand .translate-compounds-container, 
