@@ -17,7 +17,7 @@ chrome.storage.local.get(null).then((localData) => {
 
 //initializing this here to show structure. Who needs object oriented programming?
 tr_data = {text: "", HSK_levels: null, page: null, entries: [], compounds: [], subCompounds: [], strokeImgUrl: "", useImgCache: false, sentenceData: null, history: {}}
-const invertedIndex = new Map()
+const invertedIndex = new Map();
 let dictionaryData = null;
 let dictionaryDataIndexed = new Map() //allows O(1) retrieval where the key is the simplified word. The value is a list of entries with that key (as a single word can have multiple entries)
 let translationProcessingKilled = false
@@ -161,6 +161,7 @@ async function performVersionCheck() {
   }
 }
 
+
 async function loadDictionaryData(text, basic = false){
   if(!dictionaryData){  
     if(!basic){
@@ -173,7 +174,6 @@ async function loadDictionaryData(text, basic = false){
     const data = await res.json()
     dictionaryData = data; 
     buildIndexedDictionary()
-    buildInvertedIndex()
   }
 }
 
@@ -187,7 +187,6 @@ async function processTranslation(text, updateHistoryAction = "NEW"){
   tr_data.page = 0;
   tr_data.entries = sortEntries(targetEntries, true)
   tr_data.compounds = sortEntries(searchAdjWords(text))
-  tr_data.subCompounds = searchSubCompounds(text) 
   tr_data.strokeImgUrl = `https://www.strokeorder.com/assets/bishun/guide/${text.charCodeAt(0)}.png`
 
   if(text.length === 1)
@@ -200,7 +199,9 @@ async function processTranslation(text, updateHistoryAction = "NEW"){
     return
   }
 
+
   await chrome.storage.session.set({data: {action: "showTranslationPanel", data: tr_data}})
+  searchSubCompounds(text) // async, for tr_data.subCompounds
 
   if(targetEntries.length == 0)
     return
@@ -278,6 +279,9 @@ async function processSentencedbRequest(term){
 
   //inverted index keeps track of phrases starting with a pair of words
 function buildInvertedIndex(){
+  if(invertedIndex.size != 0)
+    return
+
   console.time('buildInvertedIndexTimer');
   for(const obj of dictionaryData){
     let {simplified, traditional} = obj
@@ -327,6 +331,7 @@ function searchWordAndProcessHSK(text){
   return entries
 }
  
+// Will make this later
 async function sortForWordBank(sortMode = "default"){
   await loadDictionaryData(null, basic = true)
   console.log("Sorting wordbank")
@@ -347,9 +352,11 @@ function searchAdjWords(word){
   return out
 }
 
-function searchSubCompounds(sentence = ""){
+async function searchSubCompounds(sentence = ""){
   if(!dictionaryData || sentence.length <= 2) return []
-          
+  
+  buildInvertedIndex()
+
   //first populate wordmap. Each element is a group of 2 words mapped to the position they appear
   let wordMap = new Map();
   for (let i = 0; i < sentence.length - 1; i++) {
@@ -390,12 +397,17 @@ function searchSubCompounds(sentence = ""){
   }
 
   //do a join on these with the dictionary. 
+  console.log(compounds)
   compounds = compounds.map(compound =>{
     let entry = sortEntries(dictionaryDataIndexed.get(compound.phrase))[0]
     return {...entry, indexes: compound.indexes}
   })
+  console.log(compounds)
 
-  return compounds.sort((a,b) => a.indexes[0] - b.indexes[0])
+  compounds = compounds.sort((a,b) => a.indexes[0] - b.indexes[0])
+  console.log(compounds)
+
+  await chrome.storage.session.set({data: {action: "loadSubCompounds", data: compounds}})
 }
 
 function isProperNoun(pinyin){

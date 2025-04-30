@@ -35,6 +35,9 @@ function processEventQueue(){
         tr_data = data
         showTranslationPanel()
         break
+      case "loadSubCompounds":
+          tr_data.subCompounds = data
+          displaySubCompounds()
       case "loadSentences":
           tr_data.sentenceData = data
           displaySentences(tr_data.sentenceData)
@@ -166,8 +169,6 @@ function showTranslationPanel(loading = false) {
     
     DOMresults.innerHTML = `<div class = "translate-noresults"> Not in my dictionary, sorry! :-( </div>`
     DOMresults.appendChild(DOMcompounds)
-    if(tr_data.text.length > 2)
-      makeCompoundListHTML(DOMcompounds, tr_data.subCompounds, `Compounds used in ${trimText(tr_data.text)}`, `No compound words used in ${trimText(tr_data.text)} found!`, true)
     makeCompoundListHTML(DOMcompounds, tr_data.compounds, `Compounds using ${trimText(tr_data.text)}`, `No compound words using ${trimText(tr_data.text)} found!`)
 
     $(".translate-results").addClass('skew-compound-container')
@@ -220,8 +221,6 @@ function showTranslationPanel(loading = false) {
   let DOMcompounds = document.createElement('div')
   DOMcompounds.className = 'translate-compounds-container'
 
-  if(tr_data.text.length > 2)
-    makeCompoundListHTML(DOMcompounds, tr_data.subCompounds, `Compounds used in ${trimText(tr_data.text)}`, `No compound words used in ${trimText(tr_data.text)} found!`, true)
   makeCompoundListHTML(DOMcompounds, tr_data.compounds, `Compounds using ${trimText(tr_data.text)}`, `No compound words using ${trimText(tr_data.text)} found!`)
   DOMresults.appendChild(DOMcompounds)
   if ($('.translate-compounds').length == 1) {
@@ -254,6 +253,13 @@ function showTranslationPanel(loading = false) {
 
   makeExploreBar(DOMresults, exploreChildren, exploreTitles)
   addWordBankControl();  //async
+}
+
+async function displaySubCompounds(){
+  const DOMcompounds = await waitForElement('.translate-compounds-container')
+  if(tr_data.text.length > 2){
+    makeCompoundListHTML(DOMcompounds, tr_data.subCompounds, `Compounds used in ${trimText(tr_data.text)}`, `No compound words used in ${trimText(tr_data.text)} found!`, true)
+  }
 }
 
 function closeTranslationPanel() {
