@@ -266,7 +266,6 @@
   display: flex;
   flex-direction: column;
   max-height: 80vh;
-  line-height: 1.5;
 }
 
 .translate-compounds-container{
@@ -382,11 +381,10 @@
 
 .translate-comp-entry-container{
   display: flex;
-  gap: .4em;
+  gap: 4px;
   padding-right: 2px;
   flex-wrap: wrap;
   overflow-y: auto;
-  padding: 6px 0;
 }
 
 .translate-comp-entry-container::-webkit-scrollbar,
@@ -444,8 +442,9 @@ opacity: 85%;
   z-index: 99;
 }
 
-.translate-comp span{
+.translate-comp div{
   font-size: 1em;
+  text-align: center;
   background-color: ghostwhite;
   border: 1px solid #cc99cccc;
   border-radius: 4px;
@@ -453,19 +452,19 @@ opacity: 85%;
   cursor: pointer;
 }
 
-.translate-comp span.translate-propernoun{
+.translate-comp div.translate-propernoun{
   border: 1px dashed  royalblue;
   background: aliceblue;
   color: navy;
 }
 
-.translate-comp span.compound-isHSK{
+.translate-comp div.compound-isHSK{
   border-radius: 12px;
   border-color: mediumpurple;
 }
 
 
-.translate-comp span:hover{
+.translate-comp:hover{
   background-color: #eef;
 }
 /* Explore bar */

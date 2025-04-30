@@ -564,7 +564,7 @@ function makeCompoundListHTML(parent, compounds, blockTitle, blockNoResultsText,
 
     DOMcompounds_elements.appendChild(DOMcomp)
 
-    let DOMcomp_word = document.createElement('span')
+    let DOMcomp_word = document.createElement('div')
     DOMcomp_word.innerHTML = compound.simplified
     if(isProperNoun(compound.pinyin))
       DOMcomp_word.classList.add('translate-propernoun')
