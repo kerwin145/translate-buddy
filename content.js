@@ -36,11 +36,12 @@ function processEventQueue(){
         showTranslationPanel()
         break
       case "loadSubCompounds":
-          tr_data.subCompounds = data
-          displaySubCompounds()
+        tr_data.subCompounds = data
+        displaySubCompounds()
+        break
       case "loadSentences":
-          tr_data.sentenceData = data
-          displaySentences(tr_data.sentenceData)
+        tr_data.sentenceData = data
+        displaySentences(tr_data.sentenceData)
         break
       case "showLoadingPanelBasic":
         let $targetElementLoading = $("#wordbank-content")
@@ -253,6 +254,10 @@ function showTranslationPanel(loading = false) {
 
   makeExploreBar(DOMresults, exploreChildren, exploreTitles)
   addWordBankControl();  //async
+
+  // now ready to request DOM sentences
+  chrome.runtime.sendMessage({ action: "request-sentences"})
+  console.log("requesting sentences")
 }
 
 async function displaySubCompounds(){
@@ -325,7 +330,6 @@ async function showWordbankPanel(){
     //automatically search the first word 
     chrome.runtime.sendMessage({action: "translate-basic-request", text: bank_words[0]})
   }
-
 }
 
 function loadWordBankPanel(data){
@@ -612,19 +616,18 @@ const termPatternSingle = new RegExp(
   "|\\p{Script=Han}|[\\u2E80-\\u2EFF]|[\\u2F00-\\u2FDF]",    
   "u"
 );
-async function displaySentences(data){
-  const DOMsentences = await waitForElement('.translate-sentences')
-
+async function displaySentences(sentenceData){
+  const DOMsentences = document.querySelector('.translate-sentences')
   DOMsentences.innerHTML = ""
 
-  if(data.length == 0){
+  if(sentenceData.length == 0){
     const $noResults = $('<p></p>').addClass('sentences-no-results').text(`Wow, that's rare. No sentences have been found for ${tr_data.text}. Maybe try again?`)
     $(DOMsentences).append($noResults)
     return
   }
 
   const $sentencesBlockContainer = $('<div></div>').addClass('sentences-body')
-  for (const item of data){
+  for (const item of sentenceData){
     const rawTerms = item["sentence"].split('')
     const splitPinyin = item["pinyin"].match(pinyinPattern)
     const splitTerms = item["sentence"].match(termPattern)

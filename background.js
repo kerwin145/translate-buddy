@@ -81,6 +81,9 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
     translationProcessingKilled = false
     processTranslation(request.text, request.updateHistoryAction)
   } 
+  else if (action === "request-sentences"){
+    sendSentences()
+  }
   else if (action === "translate-basic-request"){
     processTranslationBasic(request.text)
   }
@@ -178,10 +181,9 @@ async function loadDictionaryData(text, basic = false){
 }
 
 async function processTranslation(text, updateHistoryAction = "NEW"){
+  tr_data = {text: "", HSK_levels: null, page: null, entries: [], compounds: [], subCompounds: [], strokeImgUrl: "", sentenceData: null, history: null}
   await loadDictionaryData(text)
 
-  text = text.replace(/\s/g, "")
-  tr_data = {text: "", HSK_levels: null, page: null, entries: [], compounds: [], subCompounds: [], strokeImgUrl: "", sentenceData: null, history: null}
   let targetEntries = searchWordAndProcessHSK(text)
   tr_data.text = text;
   tr_data.page = 0;
@@ -199,34 +201,43 @@ async function processTranslation(text, updateHistoryAction = "NEW"){
     return
   }
 
-
   await chrome.storage.session.set({data: {action: "showTranslationPanel", data: tr_data}})
   searchSubCompounds(text) // async, for tr_data.subCompounds
+}
 
-  if(targetEntries.length == 0)
+async function sendSentences(){
+  if(translationProcessingKilled){
+    console.log("Translation killed. Cancelling sending of sentences")
+    return
+  }
+
+  if(tr_data.entries.length == 0)
     return
 
+  console.log("Sending sentences at  backgroundjs")
   try{
-    //get sentences
-    simplified_text = tr_data.entries[0]["simplified"]
-    let data = await queryCache(simplified_text)
-    if(data){ console.log("Hit generic sentence cache :o")}
-    else{
-      console.log("Missed generic cache :(")
-      data = await processSentencedbRequest(simplified_text)
-      updateCache(simplified_text, data)
-    }
-    chrome.storage.session.set({data: { action: "loadSentences", data}})
-  } catch (e) {console.log(e)}
+      //get sentences
+      simplified_text = tr_data.entries[0]["simplified"]
+      let data = await queryCache(simplified_text)
+      if(data){ console.log("Hit generic sentence cache :o")}
+      else{
+        console.log("Missed generic cache :(")
+        data = await processSentencedbRequest(simplified_text)
+        updateCache(simplified_text, data)
+      }
+
+      console.log("Sending this data:")
+      console.log(data)
+      chrome.storage.session.set({data: { action: "loadSentences", data}})
+    } catch (e) {console.log(e)}
 }
 
 async function processTranslationBasic(text){
+  tr_data = {text: "", HSK_levels: null, page: null, entries: [], compounds: [], subCompounds: [], strokeImgUrl: "", sentenceData: null, history: null}
   await loadDictionaryData(text, basic = true)
 
-  text = text.replace(/\s/g, "")
   let targetEntries = searchWordAndProcessHSK(text)
 
-  tr_data = {text: "", HSK_levels: null, page: null, entries: [], compounds: [], subCompounds: [], strokeImgUrl: "", sentenceData: null, history: null}
   tr_data.text = text;
   tr_data.page = 0;
   tr_data.entries = sortEntries(targetEntries, true)
@@ -321,8 +332,11 @@ function buildIndexedDictionary(){
 }
 
 function searchWordAndProcessHSK(text){
-  let entries = dictionaryData.filter(x => x.simplified === text || x.traditional === text)
+  text = text.replace(/\s/g, "")
+  
+  let entries = dictionaryDataIndexed.get(text) || []
   let levels = []
+
   entries.forEach(entry => {
     if(entry.HSK_level != null && !levels.some(x => x === entry.HSK_level)) levels.push(entry.HSK_level)
   });
