@@ -259,6 +259,13 @@
   margin: 0;
 }
 
+#tr-search-icon{
+  width: 1.3em;
+  padding-left: 2px;
+}
+
+/* ============= */
+
 .translate-results, .translate-compounds-container{
   margin: auto;
   width: 100%;

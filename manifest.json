@@ -34,7 +34,7 @@
   ],
   "web_accessible_resources": [
     {
-      "resources": ["styles.css", "cedict.json", "images/bank_add.png", "images/bank_delete.png", "images/bank_show.png", "partitions/*.json"],
+      "resources": ["styles.css", "cedict.json", "images/bank_add.png", "images/bank_delete.png", "images/bank_show.png", "images/search_icon.svg", "partitions/*.json"],
       "matches": ["<all_urls>"]
     }
   ]

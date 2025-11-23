@@ -33,6 +33,7 @@ function processEventQueue(){
         break
       case "showTranslationPanel":
         tr_data = data
+        console.log(tr_data)
         showTranslationPanel()
         break
       case "loadSubCompounds":
@@ -48,6 +49,7 @@ function processEventQueue(){
         $targetElementLoading.text("Loading up dictionary data...")
         break
       case "translate-basic-response":
+        // specifically tied to word bank for now
         tr_data = data
         loadWordBankPanel(data)
         break
@@ -149,6 +151,9 @@ function showTranslationPanel(loading = false) {
   showBank.on('click', function() {
     showWordbankPanel()  
   });
+
+  var openSearch = $('<img>', { src: chrome.runtime.getURL('images/search_icon.svg'), id: 'tr-search-icon', class: 'tr-bank', title: "Show word bank (shortcut: d)" });
+  $(".translate-panel-control").append(openSearch)
 
   translationPanel.querySelector('#tr-nav-back')?.addEventListener("click", () => sendQuery(tr_data.history.pref[tr_data.history.pref.length - 1], "BACK"))
   translationPanel.querySelector('#tr-nav-forward')?.addEventListener("click", () => sendQuery(tr_data.history.suff[0], "FORWARD"))
@@ -320,7 +325,7 @@ async function showWordbankPanel(){
     let $button = $('<button>', { class: `wordbank-wordlist-row ${idx == 0 ? "tr-wordbank-selected" : ""}`, text: term})
     wordListContainer.append($button)
     $button.on('click', ()=>{
-      chrome.runtime.sendMessage({action: "translate-basic-request", text: term})
+      chrome.runtime.sendMessage({action: "request-basic-translate", text: term})
       $('.wordbank-wordlist-row').removeClass('tr-wordbank-selected')
       $button.addClass("tr-wordbank-selected")
     })
@@ -328,7 +333,7 @@ async function showWordbankPanel(){
 
   if(bank_words.length > 0){
     //automatically search the first word 
-    chrome.runtime.sendMessage({action: "translate-basic-request", text: bank_words[0]})
+    chrome.runtime.sendMessage({action: "request-basic-translate", text: bank_words[0]})
   }
 }
 

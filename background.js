@@ -1,4 +1,5 @@
 importScripts('saveSync.js')
+importScripts('structures/PartitionedCache.js')
 // Get data from local storage
 /*
 chrome.storage.local.get(null).then((localData) => {
@@ -22,48 +23,8 @@ let dictionaryData = null;
 let dictionaryDataIndexed = new Map() //allows O(1) retrieval where the key is the simplified word. The value is a list of entries with that key (as a single word can have multiple entries)
 let translationProcessingKilled = false
 chrome.storage.session.setAccessLevel({ accessLevel: 'TRUSTED_AND_UNTRUSTED_CONTEXTS' });
-// sentence partitions; will cache 5 partitions max. {partition_idx : {Sentence dict, priority})
-class SentenceDB {
-  constructor(maxSize = 5) {
-      this.maxSize = maxSize;
-      this.cache = new Map();
-  }
 
-  // Get sentence and update LRU order if partition exists. Else, remove LRU and add new partition
-  async #queryPartition(partition_idx){
-      const sentenceDict = this.cache.get(partition_idx);
-      if(sentenceDict){
-          console.log(`Partition ${partition_idx} already loaded in cache: ${Array.from(this.cache.keys())}`)
-          this.cache.delete(partition_idx);
-          this.cache.set(partition_idx, sentenceDict);
-          return sentenceDict
-      }
-
-      // partition idx doesn't exist and we are full cache. we shall push out LRU
-      if (this.cache.size >= this.maxSize) {
-        const firstKey = this.cache.keys().next().value;
-        console.log(`LRU cache full. Pushing out ${firstKey}`)
-          this.cache.delete(firstKey);
-      }
-
-      try{
-        console.log(`Loading in partition ${partition_idx}`)
-        const res = await fetch(chrome.runtime.getURL(`partitions/${partition_idx}.json`))
-        const newSentenceDict = await res.json();
-        this.cache.set(partition_idx, newSentenceDict);
-        return newSentenceDict
-      }catch(e){console.log(e)}
-
-      return null
-
-  }
-
-  async getExampleSentence(term, partition_idx){
-      const partition = await this.#queryPartition(partition_idx)
-      return partition[term]
-  }
-}
-const sentenceDB = new SentenceDB()
+const sentenceDB = new PartitionedCache('sentence_partitions') // imported
 
 // Add right click menu
 chrome.runtime.onInstalled.addListener(() => {
@@ -84,7 +45,7 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
   else if (action === "request-sentences"){
     sendSentences()
   }
-  else if (action === "translate-basic-request"){
+  else if (action === "request-basic-translate"){
     processTranslationBasic(request.text)
   }
   else if(action === "sort-wordbank"){
@@ -189,7 +150,7 @@ async function processTranslation(text, updateHistoryAction = "NEW"){
   tr_data.page = 0;
   tr_data.entries = sortEntries(targetEntries, true)
   tr_data.compounds = sortEntries(searchAdjWords(text))
-  tr_data.strokeImgUrl = `https://www.strokeorder.com/assets/bishun/guide/${text.charCodeAt(0)}.png`
+  // tr_data.strokeImgUrl = `https://www.strokeorder.com/assets/bishun/guide/${text.charCodeAt(0)}.png`
 
   if(text.length === 1)
     tr_data.strokeImgUrl = `https://www.strokeorder.com/assets/bishun/guide/${text.charCodeAt(0)}.png`
@@ -355,15 +316,39 @@ async function sortForWordBank(sortMode = "default"){
   }
 
   const entries = Object.keys(res.wordbank).map(word => dictionaryDataIndexed.get(word)).filter(Boolean) //aka filter out falsey values
-  console.log(entries)
+  // console.log(entries)
 }
 
-function searchAdjWords(word){
-  if(!dictionaryData) return null
-  let out = dictionaryData.filter(
-    entry => (!(entry.simplified.length === 1 || entry.simplified === word || entry.traditional === word))
-            && (entry.simplified.includes(word) || entry.traditional.includes(word)))
-  return out
+// optimized?
+function searchAdjWords(word) {
+  if (!dictionaryData) return null;
+
+  const out = [];
+  if (word.length === 1) {
+    // Single-character queries: skip most checks
+    for (let entry of dictionaryData) {
+      if (entry.simplified.length === 1) continue;   // skip 1-char terms
+      if (entry.simplified.includes(word) || entry.traditional.includes(word))
+        out.push(entry);
+    }
+    return out;
+  }
+
+  for (let i = 0; i < dictionaryData.length; i++) {
+    const entry = dictionaryData[i];
+    const simp = entry.simplified;
+    const trad = entry.traditional;
+
+    // Skip identical full-word matches and single-char terms
+    if (simp.length === 1 || simp === word || trad === word) continue;
+
+    // Efficient substring check
+    if (simp.includes(word) || trad.includes(word)) {
+      out.push(entry);
+    }
+  }
+
+  return out;
 }
 
 async function searchSubCompounds(sentence = ""){
